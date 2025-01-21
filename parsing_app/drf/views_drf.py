@@ -8,6 +8,7 @@ from drf_spectacular.utils import extend_schema, OpenApiExample
 
 from parsing_app.drf.serializers import RequestUserSerializer, ResultParsingSerializer
 from parsing_app.models import RequestUser, ResultParsing
+from parsing_app.services.service import search
 
 
 class RequestSerializerSet(viewsets.ViewSet):
@@ -98,6 +99,9 @@ class ResultParsingSet(viewsets.ViewSet):
         ],
     )
     def list(self, request, request_id, start, end):
+
+        search(request_id, start, end)
+
         try:
             # Преобразуем start и end в datetime
             from datetime import datetime

@@ -1,12 +1,11 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
     pass
-
-
-from django.db import models
 
 
 class RequestUser(models.Model):
@@ -16,7 +15,7 @@ class RequestUser(models.Model):
     sity = models.CharField(max_length=10, blank=True, verbose_name="Город")
 
     def __str__(self):
-        return f"{self.search_phrase} ({self.sity})"
+        return f"({self.search_phrase}, {self.sity})"
 
 
 from django.db import models
