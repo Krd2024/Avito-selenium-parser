@@ -13,59 +13,65 @@ options.add_argument("--ignore-certificate-errors")
 options.add_argument("--disable-javascript")  # Отключение JavaScript
 # options.add_argument("--blink-settings=imagesEnabled=false")  # Отключение изображений
 city = "краснодар"
+
+
 # browser = webdriver.Chrome(options=options)
-with webdriver.Chrome(options=options) as browser:
-    browser.get("https://avito.ru")
+def get_browser(data):
+    product = data.search_phrase
+    city = data.sity
 
-    # ------------------------------ Выбор города -------------------------------------
-    # выбор города
-    browser.find_element(By.CSS_SELECTOR, "span.buyer-location-nev1ty").click()
-    time.sleep(0.1)
+    with webdriver.Chrome(options=options) as browser:
+        browser.get("https://avito.ru")
 
-    # поле ввода города
-    input_city = browser.find_element(
-        By.CSS_SELECTOR, "input.styles-module-searchInput-fm9ey"
-    )
+        # ------------------------------ Выбор города -------------------------------------
+        # выбор города
+        browser.find_element(By.CSS_SELECTOR, "span.buyer-location-nev1ty").click()
+        time.sleep(0.1)
 
-    time.sleep(0.1)
-    input_city.click()  # перейти к полю
-    time.sleep(0.1)
-    input_city.clear()  # очистить
-    time.sleep(0.1)
-    for i in city:
-        input_city.send_keys(i)
-        time.sleep(0.4)
-    # input_city.send_keys(city)  # город
-    time.sleep(2)
+        # поле ввода города
+        input_city = browser.find_element(
+            By.CSS_SELECTOR, "input.styles-module-searchInput-fm9ey"
+        )
 
-    # input_city.send_keys(Keys.ENTER)
+        time.sleep(0.1)
+        input_city.click()  # перейти к полю
+        time.sleep(0.1)
+        input_city.clear()  # очистить
+        time.sleep(0.1)
+        for i in city:
+            input_city.send_keys(i)
+            time.sleep(0.4)
+        # input_city.send_keys(city)  # город
+        time.sleep(2)
 
-    button = browser.find_element(
-        By.CSS_SELECTOR,
-        "button.styles-module-root-hUB0x.styles-module-root_size_s-OErXY.styles-module-root_preset_primary-BrO4Z",
-    )
-    # button = browser.find_element(
-    #     By.CSS_SELECTOR, "button[data-marker='popup-location/save-button']"
-    # )
-    browser.execute_script("arguments[0].click();", button)
-    time.sleep(2)
-    # ---------------------------------------------------------------------------------
+        # input_city.send_keys(Keys.ENTER)
 
-    input_elem = browser.find_element(
-        By.CSS_SELECTOR, "input.styles-module-input-rA1dB"
-    )  # поле поиска
+        button = browser.find_element(
+            By.CSS_SELECTOR,
+            "button.styles-module-root-hUB0x.styles-module-root_size_s-OErXY.styles-module-root_preset_primary-BrO4Z",
+        )
+        # button = browser.find_element(
+        #     By.CSS_SELECTOR, "button[data-marker='popup-location/save-button']"
+        # )
+        browser.execute_script("arguments[0].click();", button)
+        time.sleep(2)
+        # ---------------------------------------------------------------------------------
 
-    input_elem.send_keys("Samsung")  # объект поиска
+        input_elem = browser.find_element(
+            By.CSS_SELECTOR, "input.styles-module-input-rA1dB"
+        )  # поле поиска
 
-    button = browser.find_element(
-        By.CLASS_NAME, "buyer-location-xp6ezn"
-    ).click()  # start поиск
+        input_elem.send_keys(product)  # объект поиска
 
-    time.sleep(3)
-    total = browser.find_element(
-        By.CSS_SELECTOR, "span[data-marker='page-title/count']"
-    ).text  # получить
-    total = int(
-        total.replace(" объявлений", "").replace(" ", "")
-    )  # убрать пробелы и заменить на число
-    print(f"Всего объявлений: {total}")
+        button = browser.find_element(
+            By.CLASS_NAME, "buyer-location-xp6ezn"
+        ).click()  # start поиск
+
+        time.sleep(3)
+        total = browser.find_element(
+            By.CSS_SELECTOR, "span[data-marker='page-title/count']"
+        ).text  # получить
+        total = int(
+            total.replace(" объявлений", "").replace(" ", "")
+        )  # убрать пробелы и заменить на число
+        print(f"Всего объявлений: {total}")

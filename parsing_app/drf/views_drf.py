@@ -9,6 +9,7 @@ from drf_spectacular.utils import extend_schema, OpenApiExample
 from parsing_app.drf.serializers import RequestUserSerializer, ResultParsingSerializer
 from parsing_app.models import RequestUser, ResultParsing
 from parsing_app.services.service import search
+from django.utils import timezone
 
 
 class RequestSerializerSet(viewsets.ViewSet):
@@ -51,6 +52,7 @@ class RequestSerializerSet(viewsets.ViewSet):
         serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
+            # serializer.validated_data["checked_at"] = timezone.now()
             instance = serializer.save()
             return Response({"id": instance.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
