@@ -17,6 +17,6 @@ get_stat = ResultParsingSet.as_view({"get": "list"})
 
 urlpatterns = [
     path("api/v1/add/", add_request, name="add-request"),
-    path("api/v1/stat/", get_stat, name="get-stat"),
+    path("api/v1/stat/<request_id>/<start>/<end>/", get_stat, name="get-stat"),
 ]
 # urlpatterns = [path("api/v1/", include(router.urls))]

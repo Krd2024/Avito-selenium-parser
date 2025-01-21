@@ -7,11 +7,11 @@ from parsing_app.models import RequestUser, ResultParsing
 
 class RequestUserSerializer(serializers.ModelSerializer):
     class Meta:
-        modal = RequestUser
+        model = RequestUser
         fields = "__all__"
 
 
 class ResultParsingSerializer(serializers.ModelSerializer):
     class Meta:
-        modal = ResultParsing
+        model = ResultParsing
         fields = "__all__"
