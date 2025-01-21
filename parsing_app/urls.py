@@ -5,7 +5,8 @@ from django.contrib.auth.views import LogoutView
 from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 
-from drf.views_drf import AvitoSerializerSet
+from parsing_app.drf.views_drf import AvitoSerializerSet
+
 
 router = DefaultRouter()
 router.register(r"add", AvitoSerializerSet, basename="parser")

@@ -43,9 +43,8 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "rest_framework",
 ]
-REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-}
+
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -76,10 +75,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "parsing_project.wsgi.application"
 REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",  # Для drf-spectacular
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",  # Разрешить доступ всем
     ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",  # Пагинация
     "PAGE_SIZE": 10,  # Пагинация по 10 элементов на страницу
 }
 
