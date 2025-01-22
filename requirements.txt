@@ -4,6 +4,7 @@ drf-spectacular
 django
 mysqlclient
 selenium
+django-apscheduler
 
 
 

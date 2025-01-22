@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "parsing_app",
     "drf_spectacular",
     "rest_framework",
+    "django_apscheduler",
 ]
 
 

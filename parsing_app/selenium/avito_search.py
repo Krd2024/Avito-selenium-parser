@@ -68,6 +68,7 @@ def get_browser(data):
         ).click()  # start поиск
 
         time.sleep(3)
+
         total = browser.find_element(
             By.CSS_SELECTOR, "span[data-marker='page-title/count']"
         ).text  # получить
@@ -75,3 +76,4 @@ def get_browser(data):
             total.replace(" объявлений", "").replace(" ", "")
         )  # убрать пробелы и заменить на число
         print(f"Всего объявлений: {total}")
+        return total
