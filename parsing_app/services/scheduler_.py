@@ -1,17 +1,31 @@
 from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
 from datetime import datetime
 
 
-def hourly_task():
-    print(f"Задача выполняется в {datetime.now()}")
+# Глобальный планировщик
+scheduler = BackgroundScheduler()
+
+# Запуск планировщика
+scheduler.start()
 
 
-# scheduler = BackgroundScheduler()
-# scheduler.add_job(hourly_task, "interval", minutes=1)
-# scheduler.start()
-
-# minutes=1
-# hours=1
 # Остановка планировщика при завершении работы
-# import atexit
-# atexit.register(lambda: scheduler.shutdown())
+atexit.register(lambda: scheduler.shutdown())
+
+
+def scheduler_task(task, task_id, minutes=1):
+    """
+    Добавляет задачу в глобальный планировщик.
+
+    :param task: Функция, которая будет выполняться.
+    :param task_id: Уникальный идентификатор задачи.
+    :param minutes: Интервал выполнения задачи в минутах.
+    """
+    scheduler.add_job(
+        task,
+        "interval",
+        minutes=minutes,
+        id=task_id,  # Уникальный идентификатор задачи
+        replace_existing=True,  # Заменить задачу, если она уже существует
+    )
