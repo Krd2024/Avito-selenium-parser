@@ -108,17 +108,17 @@ class ResultParsingSet(viewsets.ViewSet):
         results_test = ResultParsing.objects.all()
         for result in results_test:
             logger.info(
-                f"Кол-во объявлений: {result.ads_count} Время проверки: {result.checked_at}"
+                f"Кол-во: {result.ads_count} Время проверки: {result.checked_at} ID: {result.request_id}"
             )
 
         # search(request_id, start, end)
 
         try:
-            # Преобразуем start и end в datetime
             from datetime import datetime
 
             start_date = datetime.strptime(start, "%Y-%m-%d %H:%M")
             end_date = datetime.strptime(end, "%Y-%m-%d %H:%M")
+
         except ValueError:
             return Response(
                 {"error": "Некорректный формат даты. Используйте 'YYYY-MM-DD HH:MM'."},
@@ -135,7 +135,11 @@ class ResultParsingSet(viewsets.ViewSet):
         # Сериализуем результаты
         serializer = self.serializer_class(results, many=True)
 
+        logger.info(serializer.data)
+
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     @extend_schema(
         description="Пример ViewSet для Avito",

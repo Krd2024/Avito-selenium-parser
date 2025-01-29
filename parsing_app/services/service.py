@@ -12,14 +12,14 @@ def start_search(object_search):
     city = object_search.sity  # где искать
     print(search_id := object_search.id)  # ID поиска
 
-    # Создать кортеж : (что искать,город ,ID поиска)
+    # Создать кортеж  (что искать,город ,ID поиска)
     data_for_search = phrase, city, search_id
 
     # Запуск таск для запуска скарпинга с
     # get_browser = функция скарпинга
-    logger.info((get_browser, data_for_search, search_id))
-
     scheduler_task(get_browser, data_for_search, str(search_id))
+
+    # logger.info((get_browser, data_for_search, search_id))
 
 
 # ----------------------------------------------------------------

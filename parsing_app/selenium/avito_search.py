@@ -16,10 +16,10 @@ options.add_argument("--disable-gpu")
 options.add_argument("--ignore-certificate-errors")
 # options.add_argument("--disable-javascript")  # Отключение JavaScript
 # options.add_argument("--blink-settings=imagesEnabled=false")  # Отключение изображений
-options.add_argument("--headless")  # Фоновый режим
-options.add_argument(
-    "--disable-blink-features=AutomationControlled"
-)  # Скрываем автоматизацию
+# options.add_argument("--headless")  # Фоновый режим
+# options.add_argument(
+#     "--disable-blink-features=AutomationControlled"
+# )  # Скрываем автоматизацию
 
 city = "краснодар"
 
@@ -40,8 +40,9 @@ def get_browser(data):
 
         # ------------------------------ Выбор города -------------------------------------
         # выбор города
+        time.sleep(3)
         browser.find_element(By.CSS_SELECTOR, "span.buyer-location-nev1ty").click()
-        time.sleep(10)
+        time.sleep(3)
 
         # поле ввода города
         input_city = browser.find_element(
@@ -55,7 +56,7 @@ def get_browser(data):
         time.sleep(0.1)
         for i in city:
             input_city.send_keys(i)
-            time.sleep(0.4)
+            time.sleep(0.2)
         # input_city.send_keys(city)  # город
         time.sleep(2)
 
@@ -82,7 +83,7 @@ def get_browser(data):
             By.CLASS_NAME, "buyer-location-xp6ezn"
         ).click()  # start поиск
 
-        time.sleep(3)
+        time.sleep(2)
         try:
 
             total = browser.find_element(
@@ -95,14 +96,14 @@ def get_browser(data):
             # print(f"Всего объявлений: {total}")
 
             logger.info(
-                f"\n{'-'*60}\nВсего объявлений: {total} время проверки {datetime.now()}\n{'-'*60}"
+                f"\n{'-'*80}\nВсего объявлений: {total} время проверки {datetime.now()} (Перед сохранением в бд)\n{'-'*80}"
             )
 
             data_parsing["ads_count"] = total
             data_parsing["checked_at"] = datetime.now()
             data_parsing["request"] = int(task_id)
 
-            # logger.info(f"Результат:\n{data_parsing}")
+            logger.info(f"Результат: {data_parsing}")
 
             # записать данные в базу данных
             create_result(data_parsing)
