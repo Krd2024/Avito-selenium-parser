@@ -1,4 +1,5 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from loguru import logger
 from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
@@ -46,15 +47,15 @@ class RequestSerializerSet(viewsets.ViewSet):
         ],
     )
     def create(self, request):
-        # Создаем экземпляр сериализатора с данными из запроса
-        # serializer = RequestUserSerializer(data=request.data)
 
+        # Создаем экземпляр сериализатора с данными из запроса
         serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
-            # serializer.validated_data["checked_at"] = timezone.now()
             instance = serializer.save()
 
+            # Передаёт объект поиска (что искать,город ,ID поиска) в сервис
+            # сервис запускает планировщик с поиском по параметрам
             start_search(instance)
 
             return Response({"id": instance.id}, status=status.HTTP_201_CREATED)
@@ -104,8 +105,13 @@ class ResultParsingSet(viewsets.ViewSet):
         ],
     )
     def list(self, request, request_id, start, end):
+        results_test = ResultParsing.objects.all()
+        for result in results_test:
+            logger.info(
+                f"Кол-во объявлений: {result.ads_count} Время проверки: {result.checked_at}"
+            )
 
-        search(request_id, start, end)
+        # search(request_id, start, end)
 
         try:
             # Преобразуем start и end в datetime
@@ -131,10 +137,10 @@ class ResultParsingSet(viewsets.ViewSet):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # @extend_schema(
-    #     description="Пример ViewSet для Avito",
-    #     responses={200: None},  # Укажите ожидаемые ответы
-    # )
-    # def create(self, request):
-    #     print("hello")
-    #     return response.Response({"message": "Это пример ViewSet"})
+    @extend_schema(
+        description="Пример ViewSet для Avito",
+        responses={200: None},  # Укажите ожидаемые ответы
+    )
+    def create(self, request):
+        print("hello")
+        return response.Response({"message": "Это пример ViewSet"})

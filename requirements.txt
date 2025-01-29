@@ -5,6 +5,6 @@ django
 mysqlclient
 selenium
 django-apscheduler
-
-
+selenium-wire
+loguru
 
