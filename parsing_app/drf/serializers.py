@@ -23,8 +23,8 @@ class RequestUserSerializer(serializers.ModelSerializer):
         # ).delete()
 
         result, created = RequestUser.objects.get_or_create(
-            search_phrase=search_phrase_value,
-            sity=sity_value,
+            search_phrase=search_phrase_value.lower(),
+            sity=sity_value.lower(),
             # defaults={"other_field": other_field_value},
         )
 
