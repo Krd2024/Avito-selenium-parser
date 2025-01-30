@@ -93,7 +93,6 @@ def get_browser(data):
             total = int(
                 total.replace(" объявлений", "").replace(" ", "")
             )  # убрать пробелы и заменить на число
-            # print(f"Всего объявлений: {total}")
 
             logger.info(
                 f"\n{'-'*80}\nВсего объявлений: {total} время проверки {datetime.now()} (Перед сохранением в бд)\n{'-'*80}"
