@@ -1,5 +1,10 @@
 from django.shortcuts import render
 from loguru import logger
+from django.shortcuts import render, redirect
+from .forms import RequestUserForm
+
+from parsing_app.models import RequestUser, ResultParsing
+from parsing_app.services.service import start_search
 
 
 # Create your views here.
@@ -7,29 +12,50 @@ def main(request):
     return render(request, "index.html")
 
 
-from django.shortcuts import render, redirect
-from .forms import RequestUserForm
-
-
 def request_user_vies(request):
     if request.method == "POST":
         form = RequestUserForm(request.POST)
         if form.is_valid():
-            # form.save()
-            logger.info(form.data)
+            phone = form.cleaned_data["search_phrase"]
+            sity = form.cleaned_data["sity"]
+
+            # RequestUser.objects.filter(search_phrase=phone, sity=sity).delete()
+
+            # Проверить, если такой запрос уже был,использовать его для поиска
+            # если не было, создать новый
+            data_form, created = RequestUser.objects.get_or_create(
+                search_phrase=phone, sity=sity
+            )
+
+            data_search = data_form if data_form else created
+
+            # Передаёт объект поиска (что искать,город ,ID поиска) в сервис
+            # сервис запускает планировщик с поиском по параметрам
+            start_search(object_search=data_search)
+
             return redirect("main")
     else:
-        logger.info("Не тот метод")
         form = RequestUserForm()
     return render(request, "request_user_form.html", {"form": form})
 
 
 def search_view(request):
     if request.method == "POST":
-        response_id = request.POST.get("response_id")
+        request_id = request.POST.get("request_id")
         start_data = request.POST.get("start_data")
         stop_data = request.POST.get("stop_data")
 
-        print(response_id, start_data, stop_data)
+        results = ResultParsing.objects.filter(
+            request_id=request_id,
+            checked_at__gte=start_data,
+            checked_at__lte=stop_data,
+        ).order_by("checked_at")
+
+        for result in results:
+            print(
+                f"Поиск: {result.request}\nКоличество: {result.ads_count}\nВремя проверки: {result.checked_at}\n"
+            )
+
+        # print(request_id, start_data, stop_data)
         return redirect("main")
     return render(request, "results_pars.html")

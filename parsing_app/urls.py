@@ -14,11 +14,12 @@ router.register(r"add", RequestSerializerSet, basename="add")
 router.register(r"stat", ResultParsingSet, basename="stat")
 
 add_request = RequestSerializerSet.as_view({"post": "create"})
-get_stat = ResultParsingSet.as_view({"get": "list"})
+get_stat = ResultParsingSet.as_view({"post": "create"})
 
 urlpatterns = [
     path("api/v1/add/", add_request, name="add-request"),
-    path("api/v1/stat/<request_id>/<start>/<end>/", get_stat, name="get-stat"),
+    path("api/v1/stat/", get_stat, name="get-stat"),
+    # path("api/v1/stat/<request_id>/<start>/<end>/", get_stat, name="get-stat"),
     #
     path("", main, name="main"),
     path("create/", request_user_vies, name="request_user_vies"),

@@ -41,7 +41,10 @@ def get_browser(data):
         # ------------------------------ Выбор города -------------------------------------
         # выбор города
         time.sleep(3)
-        browser.find_element(By.CSS_SELECTOR, "span.buyer-location-nev1ty").click()
+        browser.find_element(
+            By.CSS_SELECTOR, "div.main-richTitleWrapper__content-mSHt1"
+        ).click()  # Выбор города
+        # browser.find_element(By.CSS_SELECTOR, "span.buyer-location-nev1ty").click() # Выбор города
         time.sleep(3)
 
         # поле ввода города
@@ -56,7 +59,7 @@ def get_browser(data):
         time.sleep(0.1)
         for i in city:
             input_city.send_keys(i)
-            time.sleep(0.2)
+            time.sleep(0.3)
         # input_city.send_keys(city)  # город
         time.sleep(2)
 

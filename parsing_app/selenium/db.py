@@ -18,7 +18,7 @@ def create_result(data_parsing):
         # )
 
         print(
-            f"Сохранен результат для ID: {result.request} (объявлений: {result.ads_count} время проверки: {result.checked_at})"
+            f"Сохранен результат для: {result.request}. Объявлений: {result.ads_count} время проверки: {result.checked_at}"
         )
 
     except Exception as e:

@@ -9,8 +9,8 @@
     <form action="{% url 'search' %}" method="post" class="form-search-results">
       {% csrf_token %}
 
-      <label for="response_id">Номер запроса:</label>
-      <input type="text" name="response_id" id="response_id" class="form-control" />
+      <label for="request_id">Номер запроса:</label>
+      <input type="text" name="request_id" id="request_id" class="form-control" />
       <hr />
       <label for="start_data">Начало поиска:</label>
       <input type="datetime-local" name="start_data" id="start_data" class="form-control" />
