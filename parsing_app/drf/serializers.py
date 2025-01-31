@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from datetime import datetime
 from parsing_app.models import RequestUser, ResultParsing
 
 # from parsing_app import RequestUser, ResultParsing
@@ -32,7 +32,31 @@ class RequestUserSerializer(serializers.ModelSerializer):
         return result
 
 
-class ResultParsingSerializer(serializers.ModelSerializer):
+from rest_framework import serializers
+from datetime import datetime
+
+
+class ResultParsingSerializer(serializers.Serializer):
+    start_search = serializers.DateTimeField(format="%Y-%m-%d %H:%M", required=True)
+    end_search = serializers.DateTimeField(format="%Y-%m-%d %H:%M", required=True)
+    request_id = serializers.IntegerField(required=True)
+
+    def validate(self, data):
+        """
+        Проверяет, что end_search позже start_search.
+        """
+        start = data.get("start_search")
+        end = data.get("end_search")
+
+        if end <= start:
+            raise serializers.ValidationError(
+                "Дата окончания должна быть позже даты начала."
+            )
+
+        return data
+
+
+class AnswerParsingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ResultParsing
         fields = ["ads_count", "checked_at", "request"]
