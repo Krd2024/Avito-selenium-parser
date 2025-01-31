@@ -1,13 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Avito Parsing</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        text-align: center;
+        padding: 50px;
+      }
+      
+      h1 {
+        color: #333;
+      }
+      
+      a {
+        display: inline-block;
+        margin: 10px;
+        padding: 10px 20px;
+        text-decoration: none;
+        color: white;
+        background-color: #007bff;
+        border-radius: 5px;
+        transition: 0.3s;
+      }
+      
+      a:hover {
+        background-color: #0056b3;
+      }
+    </style>
   </head>
   <body>
-    <h1>Avito parsing</h1>
-    <a href="{% url 'request_user_vies' %}">Создать запрос</a>
-    <a href="{% url 'search' %}">Посмотреть результаты</a>
+    <h1>Avito Parsing</h1>
+    <a href="{% url 'request_user_vies' %}">Создать поиск</a>
+    <a href="{% url 'search' %}">Результаты</a>
+    <a href="{% url 'list' %}">Созданные поиски</a>
   </body>
 </html>

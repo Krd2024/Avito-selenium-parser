@@ -1,31 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Поиск результатов</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        text-align: center;
+        padding: 50px;
+      }
+      
+      h1 {
+        color: #333;
+      }
+      
+      .form-search-results {
+        background: white;
+        padding: 20px;
+        width: 40%;
+        margin: auto;
+        border-radius: 8px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        text-align: left;
+      }
+      
+      label {
+        font-weight: bold;
+        display: block;
+        margin-top: 10px;
+      }
+      
+      .form-control {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      
+      hr {
+        border: 0;
+        height: 1px;
+        background: #ddd;
+        margin: 20px 0;
+      }
+      
+      .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: 0.3s;
+        display: block;
+        width: 100%;
+        font-size: 16px;
+        margin-top: 15px;
+      }
+      
+      .btn-primary:hover {
+        background-color: #0056b3;
+      }
+    </style>
   </head>
   <body>
+    <h1>Поиск результатов</h1>
     <form action="{% url 'search' %}" method="post" class="form-search-results">
       {% csrf_token %}
 
       <label for="request_id">Номер запроса:</label>
       <input type="text" name="request_id" id="request_id" class="form-control" />
+
       <hr />
+
       <label for="start_data">Начало поиска:</label>
       <input type="datetime-local" name="start_data" id="start_data" class="form-control" />
 
       <label for="stop_data">Конец поиска:</label>
       <input type="datetime-local" name="stop_data" id="stop_data" class="form-control" />
 
-      <button type="submit" class="btn btn-primary">Посмотреть</button>
+      <button type="submit" class="btn-primary">Посмотреть</button>
     </form>
   </body>
-  <style>
-    .form-search-results {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-    }
-  </style>
 </html>
