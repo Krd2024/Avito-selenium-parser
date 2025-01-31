@@ -37,5 +37,14 @@
     <a href="{% url 'request_user_vies' %}">Создать поиск</a>
     <a href="{% url 'search' %}">Результаты</a>
     <a href="{% url 'list' %}">Созданные поиски</a>
+
+    <div>
+      <div>
+        <div>
+          {% block content %}
+          {% endblock %}
+        </div>
+      </div>
+    </div>
   </body>
 </html>

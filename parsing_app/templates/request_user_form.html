@@ -1,65 +1,61 @@
-<!DOCTYPE html>
-<html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Форма поиска</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        text-align: center;
-        padding: 50px;
-      }
-      
-      h1 {
-        color: #333;
-      }
-      
-      form {
-        background: white;
-        padding: 20px;
-        width: 50%;
-        margin: auto;
-        border-radius: 8px;
-        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-      }
-      
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      
-      td {
-        padding: 10px;
-        text-align: left;
-      }
-      
-      input,
-      select,
-      textarea {
-        width: 100%;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-      }
-      
-      button {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: 0.3s;
-        margin-top: 10px;
-      }
-      
-      button:hover {
-        background-color: #0056b3;
-      }
-    </style>
-  </head>
+{% extends 'index.html' %}
+{% block content %}
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 50px;
+    }
+    
+    h1 {
+      color: #333;
+    }
+    
+    form {
+      background: white;
+      padding: 20px;
+      width: 50%;
+      margin: auto;
+      border-radius: 8px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    td {
+      padding: 10px;
+      text-align: left;
+    }
+    
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-top: 10px;
+    }
+    
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+
   <body>
     <h1>Форма поиска</h1>
     <form action="" method="post">
@@ -68,4 +64,4 @@
       <button type="submit">Отправить</button>
     </form>
   </body>
-</html>
+{% endblock %}

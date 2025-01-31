@@ -1,72 +1,68 @@
-<!DOCTYPE html>
-<html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Поиск результатов</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        text-align: center;
-        padding: 50px;
-      }
-      
-      h1 {
-        color: #333;
-      }
-      
-      .form-search-results {
-        background: white;
-        padding: 20px;
-        width: 40%;
-        margin: auto;
-        border-radius: 8px;
-        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-        text-align: left;
-      }
-      
-      label {
-        font-weight: bold;
-        display: block;
-        margin-top: 10px;
-      }
-      
-      .form-control {
-        width: 100%;
-        padding: 10px;
-        margin-top: 5px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        font-size: 16px;
-      }
-      
-      hr {
-        border: 0;
-        height: 1px;
-        background: #ddd;
-        margin: 20px 0;
-      }
-      
-      .btn-primary {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: 0.3s;
-        display: block;
-        width: 100%;
-        font-size: 16px;
-        margin-top: 15px;
-      }
-      
-      .btn-primary:hover {
-        background-color: #0056b3;
-      }
-    </style>
-  </head>
+{% extends 'index.html' %}
+{% block content %}
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 50px;
+    }
+    
+    h1 {
+      color: #333;
+    }
+    
+    .form-search-results {
+      background: white;
+      padding: 20px;
+      width: 40%;
+      margin: auto;
+      border-radius: 8px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      text-align: left;
+    }
+    
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    
+    hr {
+      border: 0;
+      height: 1px;
+      background: #ddd;
+      margin: 20px 0;
+    }
+    
+    .btn-primary {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s;
+      display: block;
+      width: 100%;
+      font-size: 16px;
+      margin-top: 15px;
+    }
+    
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+  </style>
+
   <body>
     <h1>Поиск результатов</h1>
     <form action="{% url 'search' %}" method="post" class="form-search-results">
@@ -86,4 +82,4 @@
       <button type="submit" class="btn-primary">Посмотреть</button>
     </form>
   </body>
-</html>
+{% endblock %}
