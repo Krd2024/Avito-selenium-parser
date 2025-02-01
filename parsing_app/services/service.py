@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, render
 from loguru import logger
 from parsing_app.models import RequestUser, ResultParsing
 from parsing_app.selenium.avito_search import get_browser
-from parsing_app.services.scheduler_ import scheduler_task
+from parsing_app.services.scheduler_ import scheduler_task, sync_selenium_task
 from parsing_app.services.tasks import hourly_task
 
 
@@ -21,7 +21,7 @@ def start_search(object_search=None):
     print(data_for_search)
     # Запуск таск для запуска скарпинга с
     # get_browser = функция скарпинга
-    scheduler_task(get_browser, data_for_search, str(search_id))
+    scheduler_task(sync_selenium_task, data_for_search, str(search_id))
 
     # logger.info((get_browser, data_for_search, search_id))
 

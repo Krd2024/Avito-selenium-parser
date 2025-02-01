@@ -1,10 +1,14 @@
+import asyncio
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor as ConcurrentThreadPoolExecutor
 
 import atexit
 import logging
 from loguru import logger
 from datetime import datetime
+
+from parsing_app.selenium.avito_search import selenium_task
 
 # Настройка логирования
 # logging.basicConfig(level=logging.INFO)
@@ -14,6 +18,14 @@ logging.getLogger("apscheduler").setLevel(logging.WARNING)
 executors = {"default": ThreadPoolExecutor(10)}
 # Глобальный планировщик
 scheduler = BackgroundScheduler(executors=executors)
+
+
+def sync_selenium_task(data):
+    """Запускает асинхронную функцию в синхронном APScheduler"""
+    loop = asyncio.new_event_loop()  # Создаем новый event loop для потока
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(selenium_task(data))
+    loop.close()
 
 
 def start_scheduler():
@@ -42,7 +54,7 @@ def stop_scheduler():
 atexit.register(stop_scheduler)
 
 
-def scheduler_task(task, data_for_search, task_id, minutes=1):
+def scheduler_task(task, data_for_search, task_id, minutes=5):
     """
     Добавляет задачу в глобальный планировщик.
 
@@ -62,6 +74,7 @@ def scheduler_task(task, data_for_search, task_id, minutes=1):
             replace_existing=True,  # Заменить задачу, если она уже существует
             coalesce=True,
             executor="default",
+            max_instances=5,
         )
         logger.info(f"Задача '{task_id}' добавлена в планировщик.")
     except Exception as e:

@@ -1,3 +1,4 @@
+import asyncio
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
@@ -24,18 +25,20 @@ options.add_argument("--ignore-certificate-errors")
 city = "краснодар"
 
 
+async def selenium_task(data):
+    """Асинхронная обертка для Selenium"""
+    await asyncio.to_thread(get_browser, data)
+
+
 def get_browser(data):
-    # product = data.search_phrase
-    # city = data.sity
-
+    """
+    Скрапинг авито
+    """
     product, city, task_id = data
-
     logger.info(data)
-
     data_parsing = {}
 
     with webdriver.Chrome(options=options) as browser:
-        # browser.request_interceptor = interceptor
         browser.get("https://avito.ru")
 
         # ------------------------------ Выбор города -------------------------------------
