@@ -40,11 +40,13 @@ def get_browser(data):
 
         # ------------------------------ Выбор города -------------------------------------
         # выбор города
-        time.sleep(3)
+        time.sleep(5)
+        # browser.find_element(
+        #     By.CSS_SELECTOR, "div.main-richTitleWrapper__content-mSHt1"
+        # ).click()  # Выбор города
         browser.find_element(
-            By.CSS_SELECTOR, "div.main-richTitleWrapper__content-mSHt1"
+            By.CSS_SELECTOR, "span.buyer-location-nev1ty"
         ).click()  # Выбор города
-        # browser.find_element(By.CSS_SELECTOR, "span.buyer-location-nev1ty").click() # Выбор города
         time.sleep(3)
 
         # поле ввода города

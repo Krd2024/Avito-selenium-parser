@@ -1,4 +1,6 @@
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+
 import atexit
 import logging
 from loguru import logger
@@ -9,9 +11,9 @@ from datetime import datetime
 # logger = logging.getLogger(__name__)
 # Отключаем логирование APScheduler
 logging.getLogger("apscheduler").setLevel(logging.WARNING)
-
+executors = {"default": ThreadPoolExecutor(10)}
 # Глобальный планировщик
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(executors=executors)
 
 
 def start_scheduler():
@@ -58,6 +60,8 @@ def scheduler_task(task, data_for_search, task_id, minutes=1):
             args=[data_for_search],  # ID связки для поиска
             id=f"task_{task_id}",  # Уникальный идентификатор задачи
             replace_existing=True,  # Заменить задачу, если она уже существует
+            coalesce=True,
+            executor="default",
         )
         logger.info(f"Задача '{task_id}' добавлена в планировщик.")
     except Exception as e:
