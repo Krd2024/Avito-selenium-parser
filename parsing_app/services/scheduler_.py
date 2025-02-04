@@ -46,7 +46,7 @@ def stop_scheduler():
 atexit.register(stop_scheduler)
 
 
-def scheduler_task(task, data_for_search, task_id, minutes=5):
+def scheduler_task(task, data_for_search, task_id, minutes=60):
     """
     Добавляет задачу в глобальный планировщик.
 
