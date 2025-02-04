@@ -1,5 +1,3 @@
-from django.shortcuts import render
-from loguru import logger
 from django.shortcuts import render, redirect
 from .forms import RequestUserForm
 
@@ -18,6 +16,7 @@ def request_user_view(request):
         if form.is_valid():
             phone = form.cleaned_data["search_phrase"]
             sity = form.cleaned_data["sity"]
+
             # RequestUser.objects.filter(search_phrase=phone, sity=sity).delete() # Очистить записи для связки город + товар
 
             # Проверить, если такой запрос уже был,использовать его для поиска
@@ -59,5 +58,5 @@ def search_view(request):
 
 def list_view(request):
     all_requests = RequestUser.objects.all()
-    # for
+
     return render(request, "all_requests.html", {"requests": all_requests})

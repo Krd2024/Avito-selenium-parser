@@ -1,6 +1,5 @@
-from django.shortcuts import get_object_or_404, render
-from loguru import logger
-from parsing_app.models import RequestUser, ResultParsing
+from django.shortcuts import get_object_or_404
+from parsing_app.models import RequestUser
 from parsing_app.selenium.avito_search import get_browser
 from parsing_app.services.scheduler_ import scheduler_task, sync_selenium_task
 
@@ -29,19 +28,4 @@ def search(request_id, start, end):
     obj = get_object_or_404(RequestUser, id=request_id)
 
     # Узнать кол-во объявлений (город, товар)
-    total = get_browser(obj)
-
-    # return render(request, "my_template.html", {"object": obj})
-
-
-# def create_result(data_parsing):
-#     # Сохраняем результаты в БД
-#     result = ResultParsing.objects.create(
-#         request=data_parsing["request"],
-#         ads_count=data_parsing["ads_count"],
-#         checked_at=data_parsing["checked_at"],
-#     )
-#     print(
-#         f"Сохранен результат для ID: {result.request} (объявлений: {result.ads_count} время проверки: {result.checked_at})"
-#     )
-#
+    get_browser(obj)
