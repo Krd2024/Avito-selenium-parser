@@ -66,16 +66,16 @@
   ```json
   {
     "ads_count": 121261,
-    "checked_at": "2025-01-29T22:57:00",
+    "checked_at": "2025-01-29T20:57:00",
     "request": 4
   },
   {
     "ads_count": 120847,
-    "checked_at": "2025-01-29T23:10:00",
+    "checked_at": "2025-01-29T21:57:00",
     "request": 4
   },
   {
     "ads_count": 120973,
-    "checked_at": "2025-01-29T23:22:00",
+    "checked_at": "2025-01-29T22:57:00",
     "request": 4
   }
