@@ -106,4 +106,7 @@ python manage.py runserver
 ![result_4_ Avito Parsing — Яндекс Браузер 04 02 2025 17_32_37](https://github.com/user-attachments/assets/4844934f-06d2-4f7f-be11-67028cbb70fc)
 
 
+![4_ Swagger — Яндекс Браузер 04 02 2025 19_28_25](https://github.com/user-attachments/assets/43d1b95b-a5f0-46f6-a368-62698972aa2f)
+
+
 
