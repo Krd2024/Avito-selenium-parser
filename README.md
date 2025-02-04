@@ -57,4 +57,21 @@
 
 ### 1. Клонирование репозитория
 ```sh
-git clone [text](https://github.com/Krd2024/Parsing_Avito.git)
+git clone https://github.com/Krd2024/Parsing_Avito.git
+
+### 2. После установки MySQL выполните команды в MySQL:
+```sh
+CREATE DATABASE mydatabase;
+CREATE USER 'myuser'@'%' IDENTIFIED BY 'mypassword';
+GRANT ALL PRIVILEGES ON mydatabase.* TO 'myuser'@'%';
+FLUSH PRIVILEGES;
+
+### 3. Создайте файл .env в корне проекта:
+```sh
+NAME=mydatabase
+USER=myuser
+PASSWORD=mypassword
+HOST=localhost
+# HOST=db  # Docker
+PORT=3306
+SECRET_KEY=django-insecure-7+n#n7l84)i1b$!$=j*!284(8nop@7^745l&zrhh+81zsxj%$t
