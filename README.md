@@ -77,3 +77,18 @@ HOST=localhost
 PORT=3306
 SECRET_KEY=django-insecure-7+n#n7l84)i1b$!$=j*!284(8nop@7^745l&zrhh+81zsxj%$t
 ```
+### 4. Создайте и активируйте виртуальное окружение:
+```sh
+python -m venv venv
+venv\Scripts\activate   
+```
+### 5. Установите зависимости:
+```sh
+pip install -r requirements.txt   
+```
+### 6. Запуск проекта
+```sh
+python manage.py runserver   
+```
+
+
