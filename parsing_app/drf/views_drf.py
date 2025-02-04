@@ -58,7 +58,6 @@ class RequestSerializerSet(viewsets.ViewSet):
         if serializer.is_valid():
             instance = serializer.save()
 
-            # print(instance.id)
             # Передаёт объект поиска (что искать,город ,ID поиска) в сервис
             # сервис запускает планировщик с поиском по параметрам
             start_search(object_search=instance)
@@ -86,7 +85,27 @@ class ResultParsingSet(viewsets.ViewSet):
                     "start_search": "2025-01-01 12:00",
                     "end_search": "2026-01-01 12:00",
                 },
-                description="Пример получения результатов за период",
+            ),
+            OpenApiExample(
+                "Пример ответа",
+                value=[
+                    {
+                        "ads_count": 121261,
+                        "checked_at": "2025-01-29T20:57:00",
+                        "request": 4,
+                    },
+                    {
+                        "ads_count": 120847,
+                        "checked_at": "2025-01-29T21:57:00",
+                        "request": 4,
+                    },
+                    {
+                        "ads_count": 120973,
+                        "checked_at": "2025-01-29T22:57:00",
+                        "request": 4,
+                    },
+                ],
+                description="Пример ответа с результатами парсинга",
             ),
         ],
     )
