@@ -28,9 +28,8 @@ async def selenium_task(data):
 
 
 def get_browser(data):
-    """
-    Скрапинг авито
-    """
+    """Парсинг сайта"""
+
     product, city, task_id = data
     logger.info(data)
     data_parsing = {}
@@ -63,10 +62,7 @@ def get_browser(data):
         for i in city:
             input_city.send_keys(i)
             time.sleep(0.3)
-        # input_city.send_keys(city)  # город
         time.sleep(2)
-
-        # input_city.send_keys(Keys.ENTER)
 
         button = browser.find_element(
             By.CSS_SELECTOR,
@@ -115,6 +111,3 @@ def get_browser(data):
 
         except Exception as e:
             logger.error(f"Ошибка {e}")
-            # return total
-
-        # print(data_parsing)

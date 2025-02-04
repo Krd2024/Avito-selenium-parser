@@ -11,6 +11,9 @@ def main(request):
 
 
 def request_user_view(request):
+    """Принимает запрос на поиск (что искать + город)
+    Проверяет, есть ли уже такой запрос
+    """
     if request.method == "POST":
         form = RequestUserForm(request.POST)
         if form.is_valid():

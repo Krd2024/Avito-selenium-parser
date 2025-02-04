@@ -1,9 +1,8 @@
-from django.contrib.auth.views import LogoutView
 from rest_framework.routers import DefaultRouter
-from django.urls import path, include
-from .views import list_view, main, request_user_view, search_view
+from django.urls import path
 
 from parsing_app.drf.views_drf import RequestSerializerSet, ResultParsingSet
+from .views import list_view, main, request_user_view, search_view
 
 
 router = DefaultRouter()

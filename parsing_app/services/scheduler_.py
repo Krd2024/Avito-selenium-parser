@@ -73,7 +73,6 @@ def scheduler_task(task, data_for_search, task_id, minutes=60):
         logger.error(f"Ошибка при добавлении задачи '{task_id}': {e}")
 
 
-# Запускаем планировщик при импорте модуля
 start_scheduler()
 
 # =================================================================

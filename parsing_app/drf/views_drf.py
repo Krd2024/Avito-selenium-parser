@@ -1,5 +1,4 @@
 from drf_spectacular.utils import extend_schema, OpenApiExample
-from loguru import logger
 from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
@@ -93,41 +92,37 @@ class ResultParsingSet(viewsets.ViewSet):
     )
     # def list(self, request, request_id, start, end):
     def create(self, request):
-        results_test = ResultParsing.objects.all()
-        for result in results_test:
-            logger.info(
-                f"Кол-во: {result.ads_count} Время проверки: {result.checked_at} ID: {result.request_id}"
-            )
+        """
+        Обрабатывает запрос на получение результатов парсинга
+        по указанному периоду и ID запроса.
+        """
 
         serializer = self.serializer_class(data=request.data)
-        # logger.debug(serializer)
 
         if serializer.is_valid():
-
             print(serializer.validated_data)
 
-        # search(request_id, start, end)
+            # Получить данные из запроса
+            start = serializer.validated_data["start_search"]
+            end = serializer.validated_data["end_search"]
+            request_id = serializer.validated_data["request_id"]
 
-        # Получить данные из запроса
-        start = serializer.validated_data["start_search"]
-        end = serializer.validated_data["end_search"]
-        request_id = serializer.validated_data["request_id"]
+            # Фильтруем результаты по request_id и периоду
+            results = ResultParsing.objects.filter(
+                request_id=request_id,
+                checked_at__gte=start,
+                checked_at__lte=end,
+            ).order_by("checked_at")
 
-        # Фильтруем результаты по request_id и периоду
-        results = ResultParsing.objects.filter(
-            request_id=request_id,
-            checked_at__gte=start,
-            checked_at__lte=end,
-        ).order_by("checked_at")
+            for result in results:
+                print(
+                    f"Поиск: {result.request}\nКоличество: {result.ads_count}\nВремя проверки: {result.checked_at}\n"
+                )
 
-        for result in results:
-            print(
-                f"Поиск: {result.request}\nКоличество: {result.ads_count}\nВремя проверки: {result.checked_at}\n"
-            )
+            serializer = AnswerParsingSerializer(results, many=True)
 
-        serializer = AnswerParsingSerializer(results, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

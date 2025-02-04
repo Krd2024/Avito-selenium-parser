@@ -19,7 +19,6 @@ class RequestUserSerializer(serializers.ModelSerializer):
         result, created = RequestUser.objects.get_or_create(
             search_phrase=search_phrase_value.lower(),
             sity=sity_value.lower(),
-            # defaults={"other_field": other_field_value},
         )
 
         # Возвращаем найденный или созданный объект
@@ -27,6 +26,15 @@ class RequestUserSerializer(serializers.ModelSerializer):
 
 
 class ResultParsingSerializer(serializers.Serializer):
+    """
+    Сериализатор для валидации данных о процессе парсинга.
+
+    Атрибуты:
+    - start_search (datetime): Дата и время начала поиска.
+    - end_search (datetime): Дата и время окончания поиска.
+    - request_id (int): Идентификатор поискового запроса.
+    """
+
     start_search = serializers.DateTimeField(format="%Y-%m-%d %H:%M", required=True)
     end_search = serializers.DateTimeField(format="%Y-%m-%d %H:%M", required=True)
     request_id = serializers.IntegerField(required=True)
@@ -47,6 +55,14 @@ class ResultParsingSerializer(serializers.Serializer):
 
 
 class AnswerParsingSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для ответа с результатами парсинга.
+
+    - ads_count (int): Количество найденных объявлений.
+    - checked_at (datetime): Время проверки.
+    - request (int): Связанный поисковый запрос.
+    """
+
     class Meta:
         model = ResultParsing
         fields = ["ads_count", "checked_at", "request"]

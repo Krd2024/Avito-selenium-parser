@@ -3,7 +3,7 @@ from loguru import logger
 
 
 def create_result(data_parsing):
-    # Сохраняем результаты в БД
+    """Сохраняем результаты в БД"""
 
     try:
         request_user = RequestUser.objects.get(id=data_parsing["request"])
