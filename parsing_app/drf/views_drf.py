@@ -36,7 +36,8 @@ class RequestSerializerSet(viewsets.ViewSet):
     @extend_schema(
         summary="Создаёт новую задачу для поиска",
         description="Создание новой задачи.\
-                    Текущий пользователь указывается автоматически",
+                    Текущий пользователь указывается автоматически.\
+                    После создания запускается планировщик парсинга по указанным параметрам.",
         request=RequestUserSerializer,
         responses={
             201: RequestUserSerializer,
