@@ -57,7 +57,7 @@
 
 ### 1. Клонирование репозитория
 ```sh
-git clone https://github.com/Krd2024/Parsing_Avito.git
+git clone https://github.com/Krd2024/Avito-selenium-parser.git
 ```
 
 ### 2. После установки MySQL выполните команды в MySQL:
