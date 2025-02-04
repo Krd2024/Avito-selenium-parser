@@ -99,7 +99,11 @@ python manage.py runserver
 - **UI**: http://127.0.0.1:8000  
 - **API-документация (Swagger UI)**: http://127.0.0.1:8000/api/v1docs
 
-                                           -------------------------------------------
+
+                                          
 ![4_ Avito Parsing — Яндекс Браузер 04 02 2025 17_08_47](https://github.com/user-attachments/assets/208c370d-b5ea-437c-9b33-b57010521911)
+
+![result_4_ Avito Parsing — Яндекс Браузер 04 02 2025 17_32_37](https://github.com/user-attachments/assets/4844934f-06d2-4f7f-be11-67028cbb70fc)
+
 
 
