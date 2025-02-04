@@ -58,9 +58,9 @@
 - **Входные данные**:  
   ```json
   {
-  "request_id": 1,
-  "start_search": "2025-01-01 12:00",
-  "end_search": "2026-01-01 12:00"
+  "request_id": 4,
+  "start_search": "2025-01-29 12:00",
+  "end_search": "2025-01-29 23:59"
     }
 - **Ответ**: 
   ```json
@@ -70,12 +70,12 @@
     "request": 4
   },
   {
-    "ads_count": 168047,
+    "ads_count": 120847,
     "checked_at": "2025-01-29T23:10:00",
     "request": 4
   },
   {
-    "ads_count": 168047,
+    "ads_count": 120973,
     "checked_at": "2025-01-29T23:22:00",
     "request": 4
   }
