@@ -86,7 +86,11 @@ venv\Scripts\activate
 ```sh
 pip install -r requirements.txt   
 ```
-### 6. Запуск проекта
+### 6. Миграции
+```sh
+python manage.py migrate   
+```
+### 7. Запуск проекта
 ```sh
 python manage.py runserver   
 ```
