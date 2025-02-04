@@ -1,27 +1,21 @@
-import asyncio
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-from concurrent.futures import ThreadPoolExecutor as ConcurrentThreadPoolExecutor
-
-import atexit
-import logging
+from apscheduler.executors.pool import ThreadPoolExecutor
 from loguru import logger
-from datetime import datetime
+import asyncio
+import atexit
 
 from parsing_app.selenium.avito_search import selenium_task
 
-# Настройка логирования
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
-# Отключаем логирование APScheduler
-logging.getLogger("apscheduler").setLevel(logging.WARNING)
+# Создаёт ThreadPoolExecutor с 10 потоками
 executors = {"default": ThreadPoolExecutor(10)}
+
 # Глобальный планировщик
 scheduler = BackgroundScheduler(executors=executors)
 
 
 def sync_selenium_task(data):
     """Запускает асинхронную функцию в синхронном APScheduler"""
+
     loop = asyncio.new_event_loop()  # Создаем новый event loop для потока
     asyncio.set_event_loop(loop)
     loop.run_until_complete(selenium_task(data))
@@ -29,9 +23,8 @@ def sync_selenium_task(data):
 
 
 def start_scheduler():
-    """
-    Запускает глобальный планировщик.
-    """
+    """Запускает глобальный планировщик."""
+
     try:
         scheduler.start()
         logger.info("Планировщик запущен.")
@@ -40,9 +33,8 @@ def start_scheduler():
 
 
 def stop_scheduler():
-    """
-    Останавливает глобальный планировщик.
-    """
+    """Останавливает глобальный планировщик."""
+
     try:
         scheduler.shutdown()
         logger.info("Планировщик остановлен.")
@@ -85,17 +77,7 @@ def scheduler_task(task, data_for_search, task_id, minutes=5):
 start_scheduler()
 
 # =================================================================
-# Обновление задачи:
-# scheduler.reschedule_job(
-#     task_name,
-#     trigger="interval",
-#     minutes=5,  # Новый интервал
-# )
 
-# Удаление задачи:
-# scheduler.remove_job(task_name)
-
-#
 # При использовании триггера "interval" вы можете указать следующие параметры:
 
 # seconds: Интервал в секундах.

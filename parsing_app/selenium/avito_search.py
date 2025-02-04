@@ -1,15 +1,12 @@
-import asyncio
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-import time
+from selenium import webdriver
 from datetime import datetime
-import logging
 from loguru import logger
+import asyncio
+import time
 
 from parsing_app.selenium.db import create_result
 
-
-# logger = logging.getLogger(__name__)
 
 options = webdriver.ChromeOptions()
 
@@ -47,6 +44,7 @@ def get_browser(data):
         # browser.find_element(
         #     By.CSS_SELECTOR, "div.main-richTitleWrapper__content-mSHt1"
         # ).click()  # Выбор города
+
         browser.find_element(
             By.CSS_SELECTOR, "span.buyer-location-nev1ty"
         ).click()  # Выбор города

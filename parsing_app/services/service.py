@@ -3,14 +3,10 @@ from loguru import logger
 from parsing_app.models import RequestUser, ResultParsing
 from parsing_app.selenium.avito_search import get_browser
 from parsing_app.services.scheduler_ import scheduler_task, sync_selenium_task
-from parsing_app.services.tasks import hourly_task
 
 
 def start_search(object_search=None):
-    """
-    Формирует данные для скарпинга Авито.
-
-    """
+    """Формирует данные для скарпинга Авито."""
 
     phrase = object_search.search_phrase  # что искать
     city = object_search.sity  # где искать
@@ -19,7 +15,8 @@ def start_search(object_search=None):
     # Создать кортеж  (что искать,город ,ID поиска)
     data_for_search = phrase, city, search_id
     print(data_for_search)
-    # Запуск таск для запуска скарпинга с
+
+    # Запуск планировщика
     # get_browser = функция скарпинга
     scheduler_task(sync_selenium_task, data_for_search, str(search_id))
 

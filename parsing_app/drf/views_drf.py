@@ -1,11 +1,9 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import extend_schema, OpenApiExample
 from loguru import logger
 from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework import viewsets, response
-from rest_framework.permissions import IsAuthenticated
-from drf_spectacular.utils import extend_schema, OpenApiExample
+
 
 from parsing_app.drf.serializers import (
     AnswerParsingSerializer,
@@ -13,8 +11,10 @@ from parsing_app.drf.serializers import (
     ResultParsingSerializer,
 )
 from parsing_app.models import RequestUser, ResultParsing
-from parsing_app.services.service import search, start_search
-from django.utils import timezone
+from parsing_app.services.service import start_search
+
+# from rest_framework.permissions import IsAuthenticated
+# from django.utils import timezone
 
 
 class RequestSerializerSet(viewsets.ViewSet):
