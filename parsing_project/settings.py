@@ -11,22 +11,75 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-from decouple import config
+
+from decouple import Config, RepositoryEnv, config as env_config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# ``python-decouple`` reads a value from the ``.env`` file *or* from the
+# process environment.  Generic names such as ``USER``, ``NAME`` or ``HOST``
+# collide with variables that are always present in a shell (``$USER`` on
+# Linux/macOS, for example), so a missing ``.env`` silently produced a wrong
+# database configuration.  Reading the ``.env`` file explicitly (when it
+# exists) makes the file the single source of truth and keeps the shell from
+# poisoning the settings.
+ENV_FILE = BASE_DIR / ".env"
+if ENV_FILE.is_file():
+    config = Config(RepositoryEnv(str(ENV_FILE)))
+else:
+    config = env_config
+
+
+def get_setting(*names: str, default=None):
+    """Return the first configured value among ``names``.
+
+    Both the historical short names (``NAME``, ``USER``, ...) and the
+    ``DB_``-prefixed names used by ``docker-compose.yml`` are supported, so the
+    project starts regardless of which convention the deployment uses.
+
+    :param names: configuration keys to try, in order of priority.
+    :param default: value returned when no key is configured.
+    :return: the configured value or ``default``.
+    """
+    for name in names:
+        value = config(name, default=None)
+        if value not in (None, ""):
+            return value
+    return default
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config("SECRET_KEY")
+# A development fallback keeps ``manage.py`` usable on a fresh clone that has
+# no ``.env`` yet; production deployments must set SECRET_KEY explicitly.
+SECRET_KEY = get_setting(
+    "SECRET_KEY",
+    default="django-insecure-dev-only-change-me-in-production",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = get_setting("DEBUG", default="True").lower() in ("1", "true", "yes", "on")
 
-ALLOWED_HOSTS = []
+# Empty ALLOWED_HOSTS only works for requests to localhost while DEBUG is on,
+# which broke the containerised setup (requests arrive with the container or
+# host name).  The value is configurable and defaults to "everything".
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in get_setting("ALLOWED_HOSTS", default="*").split(",")
+    if host.strip()
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in get_setting(
+        "CSRF_TRUSTED_ORIGINS",
+        default="http://localhost:8000,http://127.0.0.1:8000",
+    ).split(",")
+    if origin.strip()
+]
 
 
 # Application definition
@@ -95,16 +148,43 @@ REST_FRAMEWORK = {
 # }
 AUTH_USER_MODEL = "parsing_app.User"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": config("NAME"),
-        "USER": config("USER"),
-        "PASSWORD": config("PASSWORD"),
-        "HOST": config("HOST"),
-        "PORT": config("PORT"),
+# ``mysqlclient`` is a C extension and is not always installable (it needs
+# libmysqlclient headers).  Fall back to the pure-Python PyMySQL driver so the
+# project keeps working instead of dying with
+# "Error loading MySQLdb module. Did you install mysqlclient?".
+try:  # pragma: no cover - depends on the installed driver
+    import MySQLdb  # noqa: F401
+except ImportError:  # pragma: no cover - exercised on machines without mysqlclient
+    try:
+        import pymysql
+
+        pymysql.install_as_MySQLdb()
+    except ImportError:
+        pass
+
+# ``ENGINE=sqlite`` (or DB_ENGINE) lets the test-suite and a quick local run
+# work without any MySQL server at all.
+DB_ENGINE = get_setting("DB_ENGINE", "ENGINE", default="mysql").lower()
+
+if DB_ENGINE in ("sqlite", "sqlite3", "django.db.backends.sqlite3"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": get_setting("DB_NAME", "NAME", default=str(BASE_DIR / "db.sqlite3")),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": get_setting("DB_NAME", "NAME", default="mydatabase"),
+            "USER": get_setting("DB_USER", "USER", default="myuser"),
+            "PASSWORD": get_setting("DB_PASSWORD", "PASSWORD", default="mypassword"),
+            "HOST": get_setting("DB_HOST", "HOST", default="127.0.0.1"),
+            "PORT": str(get_setting("DB_PORT", "PORT", default="3306")),
+            "OPTIONS": {"charset": "utf8mb4"},
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -146,3 +226,23 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Как часто опрашивать Авито для каждой связки (по ТЗ — раз в час).
+PARSE_INTERVAL_MINUTES = int(get_setting("PARSE_INTERVAL_MINUTES", default="60"))
+
+# Восстанавливать задачи парсинга при старте веб-сервера.
+RUN_SCHEDULER = get_setting("RUN_SCHEDULER", default="True").lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Avito parsing API",
+    "DESCRIPTION": "Сервис отслеживания количества объявлений на Авито.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}

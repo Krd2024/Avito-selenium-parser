@@ -55,49 +55,81 @@
 
 ## Установка и запуск
 
-### 1. Клонирование репозитория
+### Вариант 1. Docker (рекомендуется)
 ```sh
 git clone https://github.com/Krd2024/Avito-selenium-parser.git
+cd Avito-selenium-parser
+docker compose up --build
+```
+Все переменные окружения уже заданы в `docker-compose.yml`, отдельный `.env`
+для этого варианта не нужен. MySQL поднимается тем же compose-файлом, а
+приложение дожидается его готовности (healthcheck) и само применяет миграции.
+
+### Вариант 2. Локальный запуск
+
+#### 1. Клонирование репозитория
+```sh
+git clone https://github.com/Krd2024/Avito-selenium-parser.git
+cd Avito-selenium-parser
 ```
 
-### 2. После установки MySQL выполните команды в MySQL:
+#### 2. Создайте файл `.env` (за основу возьмите `.env.example`)
 ```sh
+cp .env.example .env
+```
+Быстрый старт вообще без MySQL — укажите в `.env`:
+```sh
+DB_ENGINE=sqlite
+```
+Для MySQL создайте базу и пользователя:
+```sql
 CREATE DATABASE mydatabase;
 CREATE USER 'myuser'@'%' IDENTIFIED BY 'mypassword';
 GRANT ALL PRIVILEGES ON mydatabase.* TO 'myuser'@'%';
 FLUSH PRIVILEGES;
 ```
-### 3. Создайте файл .env в корне проекта:
-```sh
-NAME=mydatabase
-USER=myuser
-PASSWORD=mypassword
-HOST=localhost
-# HOST=db  # Docker
-PORT=3306
-SECRET_KEY=django-insecure-7+n#n7l84)i1b$!$=j*!284(8nop@7^745l&zrhh+81zsxj%$t
-```
-### 4. Создайте и активируйте виртуальное окружение:
+
+#### 3. Создайте и активируйте виртуальное окружение
 ```sh
 python -m venv venv
-venv\Scripts\activate   
+source venv/bin/activate     # Linux / macOS
+venv\Scripts\activate        # Windows
 ```
-### 5. Установите зависимости:
+
+#### 4. Установите зависимости
 ```sh
-pip install -r requirements.txt   
+pip install -r requirements.txt
 ```
-### 6. Миграции
+
+#### 5. Миграции
 ```sh
-python manage.py migrate   
+python manage.py migrate
 ```
-### 7. Запуск проекта
+
+#### 6. Запуск проекта
 ```sh
-python manage.py runserver   
+python manage.py runserver
 ```
+
+## Тесты
+```sh
+DB_ENGINE=sqlite RUN_SCHEDULER=False python manage.py test parsing_app
+```
+
+## Переменные окружения
+| Переменная | По умолчанию | Описание |
+|---|---|---|
+| `SECRET_KEY` | dev-ключ | Секретный ключ Django (обязателен в проде) |
+| `DEBUG` | `True` | Режим отладки |
+| `ALLOWED_HOSTS` | `*` | Список хостов через запятую |
+| `DB_ENGINE` | `mysql` | `mysql` или `sqlite` |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` | см. `.env.example` | Параметры БД |
+| `PARSE_INTERVAL_MINUTES` | `60` | Периодичность опроса Авито |
+| `RUN_SCHEDULER` | `True` | Восстанавливать задачи парсинга при старте |
 
 ## Доступ к сервису:
 - **UI**: http://127.0.0.1:8000  
-- **API-документация (Swagger UI)**: http://127.0.0.1:8000/api/v1docs
+- **API-документация (Swagger UI)**: http://127.0.0.1:8000/api/v1/docs/
 
 
                                           

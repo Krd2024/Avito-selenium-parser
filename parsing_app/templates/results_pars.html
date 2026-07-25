@@ -65,6 +65,17 @@
 
   <body>
     <h1>Поиск результатов</h1>
+
+    {% if errors %}
+      <div style="width: 40%; margin: 0 auto 15px; padding: 12px; background: #f8d7da; color: #842029; border-radius: 5px; text-align: left;">
+        <ul style="margin: 0; padding-left: 20px;">
+          {% for error in errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
     <form action="{% url 'search' %}" method="post" class="form-search-results">
       {% csrf_token %}
 

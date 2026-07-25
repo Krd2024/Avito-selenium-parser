@@ -5,20 +5,37 @@ from rest_framework import serializers
 
 
 class RequestUserSerializer(serializers.ModelSerializer):
+    """Сериализатор пары «поисковая фраза + регион» для метода /add."""
+
+    search_phrase = serializers.CharField(
+        max_length=255, allow_blank=False, trim_whitespace=True
+    )
+    sity = serializers.CharField(
+        max_length=255, allow_blank=False, trim_whitespace=True
+    )
+
     class Meta:
         model = RequestUser
-        fields = "__all__"
+        fields = ["id", "search_phrase", "sity"]
+        read_only_fields = ["id"]
 
-    def create(self, validated_data):
-        """Проверить есть ли уже такие запросы"""
+    def create(self, validated_data: dict) -> RequestUser:
+        """Возвращает существующую связку или создаёт новую.
 
-        # Извлекаем данные из validated_data
-        search_phrase_value = validated_data.get("search_phrase")
-        sity_value = validated_data.get("sity")
+        Оба поля обязательны и приводятся к нижнему регистру, поэтому
+        «Москва» и «москва» считаются одним и тем же регионом.
 
-        result, created = RequestUser.objects.get_or_create(
-            search_phrase=search_phrase_value.lower(),
-            sity=sity_value.lower(),
+        :param validated_data: провалидированные данные запроса.
+        :return: найденный или созданный объект :class:`RequestUser`.
+        """
+        # Поля объявлены как required, поэтому здесь они всегда присутствуют:
+        # раньше отсутствующий "sity" приводил к AttributeError и ответу 500.
+        search_phrase_value = validated_data["search_phrase"].strip().lower()
+        sity_value = validated_data["sity"].strip().lower()
+
+        result, _created = RequestUser.objects.get_or_create(
+            search_phrase=search_phrase_value,
+            sity=sity_value,
         )
 
         # Возвращаем найденный или созданный объект

@@ -1,12 +1,14 @@
-django-decouple==2.1
+# Конфигурация из .env (пакет django-decouple заброшен, актуальный — python-decouple)
+python-decouple==3.8
+django==5.1.5
 djangorestframework==3.15.2
-drf-spectacular
-django
-mysqlclient
-selenium
-django-apscheduler
-selenium-wire
-loguru
-redis==5.2.1 
-django-redis==5.4.0
-
+drf-spectacular==0.28.0
+# Драйвер MySQL. PyMySQL — чистый Python и ставится везде без системных
+# библиотек, поэтому используется по умолчанию (settings.py подключает его
+# как MySQLdb). При желании можно дополнительно поставить mysqlclient:
+#     pip install mysqlclient
+PyMySQL==1.1.1
+selenium==4.28.1
+apscheduler==3.11.0
+django-apscheduler==0.7.0
+loguru==0.7.3
