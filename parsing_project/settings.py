@@ -162,9 +162,10 @@ except ImportError:  # pragma: no cover - exercised on machines without mysqlcli
     except ImportError:
         pass
 
-# ``ENGINE=sqlite`` (or DB_ENGINE) lets the test-suite and a quick local run
-# work without any MySQL server at all.
-DB_ENGINE = get_setting("DB_ENGINE", "ENGINE", default="mysql").lower()
+# По умолчанию используется SQLite: проект запускается сразу после клонирования,
+# без установки и настройки MySQL. Для MySQL достаточно указать в .env
+# DB_ENGINE=mysql (в docker-compose.yml это уже сделано).
+DB_ENGINE = get_setting("DB_ENGINE", "ENGINE", default="sqlite").lower()
 
 if DB_ENGINE in ("sqlite", "sqlite3", "django.db.backends.sqlite3"):
     DATABASES = {
@@ -230,7 +231,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Как часто опрашивать Авито для каждой связки (по ТЗ — раз в час).
-PARSE_INTERVAL_MINUTES = int(get_setting("PARSE_INTERVAL_MINUTES", default="60"))
+# Поддерживается и короткое имя PERIOD из .env.
+PARSE_INTERVAL_MINUTES = int(get_setting("PARSE_INTERVAL_MINUTES", "PERIOD", default="60"))
 
 # Восстанавливать задачи парсинга при старте веб-сервера.
 RUN_SCHEDULER = get_setting("RUN_SCHEDULER", default="True").lower() in (

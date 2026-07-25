@@ -32,6 +32,17 @@ class ParsingAppConfig(AppConfig):
         if not getattr(settings, "RUN_SCHEDULER", True):
             return
 
-        from parsing_app.services.scheduler_ import restore_jobs
+        # Запрос к БД прямо в ready() вызывает RuntimeWarning
+        # («Accessing the database during app initialization»), поэтому
+        # восстановление откладывается до полной загрузки приложений.
+        from django.core.signals import request_started
+        from django.dispatch import receiver
 
-        restore_jobs()
+        @receiver(request_started, weak=False, dispatch_uid="parsing_app.restore_jobs")
+        def _restore_once(sender, **kwargs) -> None:
+            """Восстанавливает задачи при первом входящем запросе."""
+            request_started.disconnect(dispatch_uid="parsing_app.restore_jobs")
+
+            from parsing_app.services.scheduler_ import restore_jobs
+
+            restore_jobs()

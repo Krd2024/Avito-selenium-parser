@@ -12,6 +12,7 @@ services:
       - mysql_data:/var/lib/mysql
     ports:
       - "3307:3306"
+
     # Без healthcheck приложение стартовало раньше готовности MySQL
     # и падало на `manage.py migrate` («Can't connect to MySQL server»).
     healthcheck:
@@ -28,10 +29,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
     environment:
-      SECRET_KEY: django-insecure-change-me
-      DEBUG: "True"
-      ALLOWED_HOSTS: "*"
+      # В контейнере работаем с MySQL (локально по умолчанию SQLite).
       DB_ENGINE: mysql
       DB_NAME: mydatabase
       DB_USER: myuser
@@ -39,15 +39,27 @@ services:
       DB_HOST: db
       DB_PORT: "3306"
       PARSE_INTERVAL_MINUTES: "60"
+
+    # required: false — без этого `docker compose up` падал, если .env
+    # не создан (файл не хранится в репозитории).
+    env_file:
+      - path: .env
+        required: false
+
     volumes:
       - .:/app
+
     ports:
       - "8000:8000"
+
     # Контейнеру нужен большой /dev/shm, иначе Chromium падает.
     shm_size: "2gb"
+
     command: >
-      sh -c "python manage.py migrate --noinput &&
-             python manage.py runserver 0.0.0.0:8000"
+      sh -c "
+        python manage.py migrate --noinput &&
+        python manage.py runserver 0.0.0.0:8000
+      "
 
 volumes:
   mysql_data:

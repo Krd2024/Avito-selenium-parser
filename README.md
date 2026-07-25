@@ -77,11 +77,12 @@ cd Avito-selenium-parser
 ```sh
 cp .env.example .env
 ```
-Быстрый старт вообще без MySQL — укажите в `.env`:
+По умолчанию используется SQLite — проект запускается сразу, без установки
+MySQL. Чтобы переключиться на MySQL, укажите в `.env`:
 ```sh
-DB_ENGINE=sqlite
+DB_ENGINE=mysql
 ```
-Для MySQL создайте базу и пользователя:
+и создайте базу и пользователя:
 ```sql
 CREATE DATABASE mydatabase;
 CREATE USER 'myuser'@'%' IDENTIFIED BY 'mypassword';
@@ -113,7 +114,7 @@ python manage.py runserver
 
 ## Тесты
 ```sh
-DB_ENGINE=sqlite RUN_SCHEDULER=False python manage.py test parsing_app
+RUN_SCHEDULER=False python manage.py test parsing_app
 ```
 
 ## Переменные окружения
@@ -122,9 +123,9 @@ DB_ENGINE=sqlite RUN_SCHEDULER=False python manage.py test parsing_app
 | `SECRET_KEY` | dev-ключ | Секретный ключ Django (обязателен в проде) |
 | `DEBUG` | `True` | Режим отладки |
 | `ALLOWED_HOSTS` | `*` | Список хостов через запятую |
-| `DB_ENGINE` | `mysql` | `mysql` или `sqlite` |
+| `DB_ENGINE` | `sqlite` | `sqlite` (локально) или `mysql` |
 | `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` | см. `.env.example` | Параметры БД |
-| `PARSE_INTERVAL_MINUTES` | `60` | Периодичность опроса Авито |
+| `PARSE_INTERVAL_MINUTES` (или `PERIOD`) | `60` | Периодичность опроса Авито, мин. |
 | `RUN_SCHEDULER` | `True` | Восстанавливать задачи парсинга при старте |
 
 ## Доступ к сервису:
