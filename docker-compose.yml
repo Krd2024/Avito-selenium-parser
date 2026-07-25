@@ -13,12 +13,14 @@ services:
     ports:
       - "3307:3306"
 
+    # Без healthcheck приложение стартовало раньше готовности MySQL
+    # и падало на `manage.py migrate` («Can't connect to MySQL server»).
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-umyuser", "-pmypassword"]
       interval: 5s
       timeout: 5s
-      retries: 10
-      start_period: 5s
+      retries: 20
+      start_period: 30s
 
   app:
     build: .
@@ -29,14 +31,20 @@ services:
         condition: service_healthy
 
     environment:
+      # В контейнере работаем с MySQL (локально по умолчанию SQLite).
+      DB_ENGINE: mysql
       DB_NAME: mydatabase
       DB_USER: myuser
       DB_PASSWORD: mypassword
       DB_HOST: db
-      DB_PORT: 3306
+      DB_PORT: "3306"
+      PARSE_INTERVAL_MINUTES: "60"
 
+    # required: false — без этого `docker compose up` падал, если .env
+    # не создан (файл не хранится в репозитории).
     env_file:
-      - .env
+      - path: .env
+        required: false
 
     volumes:
       - .:/app
@@ -44,9 +52,12 @@ services:
     ports:
       - "8000:8000"
 
+    # Контейнеру нужен большой /dev/shm, иначе Chromium падает.
+    shm_size: "2gb"
+
     command: >
       sh -c "
-        python manage.py migrate &&
+        python manage.py migrate --noinput &&
         python manage.py runserver 0.0.0.0:8000
       "
 

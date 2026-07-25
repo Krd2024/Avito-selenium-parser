@@ -1,4 +1,5 @@
 from drf_spectacular.utils import extend_schema, OpenApiExample
+from loguru import logger
 from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
@@ -51,19 +52,28 @@ class RequestSerializerSet(viewsets.ViewSet):
         ],
     )
     def create(self, request):
+        """Регистрирует связку «фраза + регион» и ставит её на мониторинг."""
 
         # Создаем экземпляр сериализатора с данными из запроса
         serializer = self.serializer_class(data=request.data)
 
-        if serializer.is_valid():
-            instance = serializer.save()
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            # Передаёт объект поиска (что искать,город ,ID поиска) в сервис
-            # сервис запускает планировщик с поиском по параметрам
-            start_search(object_search=instance)
+        instance = serializer.save()
 
-            return Response({"id": instance.id}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Передаёт объект поиска (что искать, город, ID поиска) в сервис,
+        # сервис запускает планировщик с поиском по параметрам.
+        start_search(object_search=instance)
+
+        return Response(
+            {
+                "id": instance.id,
+                "search_phrase": instance.search_phrase,
+                "sity": instance.sity,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class ResultParsingSet(viewsets.ViewSet):
@@ -109,7 +119,6 @@ class ResultParsingSet(viewsets.ViewSet):
             ),
         ],
     )
-    # def list(self, request, request_id, start, end):
     def create(self, request):
         """
         Обрабатывает запрос на получение результатов парсинга
@@ -117,31 +126,36 @@ class ResultParsingSet(viewsets.ViewSet):
         """
 
         serializer = self.serializer_class(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if serializer.is_valid():
-            print(serializer.validated_data)
+        # Получить данные из запроса
+        start = serializer.validated_data["start_search"]
+        end = serializer.validated_data["end_search"]
+        request_id = serializer.validated_data["request_id"]
 
-            # Получить данные из запроса
-            start = serializer.validated_data["start_search"]
-            end = serializer.validated_data["end_search"]
-            request_id = serializer.validated_data["request_id"]
+        # Несуществующий id раньше молча возвращал пустой список —
+        # теперь клиент получает понятную ошибку 404.
+        if not RequestUser.objects.filter(id=request_id).exists():
+            return Response(
+                {"request_id": f"Запрос с id={request_id} не найден."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-            # Фильтруем результаты по request_id и периоду
-            results = ResultParsing.objects.filter(
-                request_id=request_id,
-                checked_at__gte=start,
-                checked_at__lte=end,
-            ).order_by("checked_at")
+        # Фильтруем результаты по request_id и периоду
+        results = ResultParsing.objects.filter(
+            request_id=request_id,
+            checked_at__gte=start,
+            checked_at__lte=end,
+        ).order_by("checked_at")
 
-            for result in results:
-                print(
-                    f"Поиск: {result.request}\nКоличество: {result.ads_count}\nВремя проверки: {result.checked_at}\n"
-                )
+        logger.info(
+            f"/stat: id={request_id}, период {start} — {end}, "
+            f"найдено записей: {results.count()}"
+        )
 
-            serializer = AnswerParsingSerializer(results, many=True)
-
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        answer_serializer = AnswerParsingSerializer(results, many=True)
+        return Response(answer_serializer.data, status=status.HTTP_200_OK)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
