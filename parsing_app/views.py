@@ -24,10 +24,10 @@ def request_user_view(request):
 
             # Проверить, если такой запрос уже был,использовать его для поиска
             # если не было, создать новый
-            data_form, created = RequestUser.objects.get_or_create(
+            data_form, _ = RequestUser.objects.get_or_create(
                 search_phrase=phone, sity=sity
             )
-            data_search = data_form if data_form else created
+            data_search = data_form if data_form else None
 
             # Передаёт объект поиска (что искать,город ,ID поиска) в сервис
             # сервис запускает планировщик с поиском по параметрам

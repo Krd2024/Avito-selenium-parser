@@ -3,6 +3,7 @@ from apscheduler.executors.pool import ThreadPoolExecutor
 from loguru import logger
 import asyncio
 import atexit
+from decouple import config
 
 from parsing_app.selenium.avito_search import selenium_task
 
@@ -46,7 +47,7 @@ def stop_scheduler():
 atexit.register(stop_scheduler)
 
 
-def scheduler_task(task, data_for_search, task_id, minutes=60):
+def scheduler_task(task, data_for_search, task_id, minutes=config("PERIOD", cast=int)):
     """
     Добавляет задачу в глобальный планировщик.
 

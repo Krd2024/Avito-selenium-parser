@@ -54,11 +54,11 @@ def get_browser(data):
             By.CSS_SELECTOR, "input.styles-module-searchInput-fm9ey"
         )
 
-        time.sleep(0.1)
+        time.sleep(0.2)
         input_city.click()  # перейти к полю
-        time.sleep(0.1)
+        time.sleep(0.2)
         input_city.clear()  # очистить
-        time.sleep(0.1)
+        time.sleep(0.2)
         for i in city:
             input_city.send_keys(i)
             time.sleep(0.3)

@@ -2,7 +2,10 @@ from parsing_app.services.scheduler_ import scheduler_task, sync_selenium_task
 
 
 def start_search(object_search=None):
-    """Формирует данные для скарпинга Авито."""
+    """
+    Формирует данные для скарпинга Авито.
+    Запускает асинхронную функцию.
+    """
 
     phrase = object_search.search_phrase  # что искать
     city = object_search.sity  # где искать
