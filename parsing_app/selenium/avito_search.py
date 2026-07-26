@@ -318,9 +318,24 @@ def _click_local_priority_toggle(browser) -> bool:
             logger.info("Обычный клик не сработал, используем JavaScript")
             browser.execute_script("arguments[0].click();", toggle)
         
-        # Ждём обновления страницы (Avito делает это через JS)
-        time.sleep(1.5)
-        logger.info("Переключатель 'Сначала из города' включён.")
+        # Ждём обновления списка товаров после включения фильтра
+        # Avito делает AJAX-запрос и обновляет DOM
+        logger.info("Ожидание обновления списка товаров после включения фильтра...")
+        
+        # Ждём появления индикатора загрузки (если есть) или просто ждём
+        time.sleep(2)
+        
+        # Ждём, пока счётчик объявлений обновится или станет видимым
+        try:
+            WebDriverWait(browser, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "span[data-marker='page-title/count']"))
+            )
+            # Даём дополнительное время для полного обновления DOM
+            time.sleep(1)
+        except TimeoutException:
+            logger.warning("Не удалось дождаться обновления счётчика, продолжаем...")
+        
+        logger.info("Переключатель 'Сначала из города' включён, список обновлён.")
         return True
     except Exception as exc:
         logger.error(f"Не удалось кликнуть по переключателю: {exc}")
