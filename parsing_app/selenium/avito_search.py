@@ -96,6 +96,84 @@ def _find_first(browser, selectors: Tuple[str, ...], timeout: int = WAIT_TIMEOUT
     return None
 
 
+# Транслитерация кириллицы в латиницу для slug'ов Авито.
+# Авито использует латиницу в URL: /moskva, /krasnodar, /sankt-peterburg, а не кириллицу.
+# Прежняя реализация делала quote_plus(\"краснодар\") -> %D0%BA... и получала 404.
+_CYRILLIC_TO_LATIN = {
+    "а": "a",
+    "б": "b",
+    "в": "v",
+    "г": "g",
+    "д": "d",
+    "е": "e",
+    "ё": "e",  # в URL Авито ё -> e (Орел, а не Oryol)
+    "ж": "zh",
+    "з": "z",
+    "и": "i",
+    "й": "y",
+    "к": "k",
+    "л": "l",
+    "м": "m",
+    "н": "n",
+    "о": "o",
+    "п": "p",
+    "р": "r",
+    "с": "s",
+    "т": "t",
+    "у": "u",
+    "ф": "f",
+    "х": "h",
+    "ц": "ts",
+    "ч": "ch",
+    "ш": "sh",
+    "щ": "sch",
+    "ъ": "",
+    "ы": "y",
+    "ь": "",
+    "э": "e",
+    "ю": "yu",
+    "я": "ya",
+}
+
+
+def _transliterate_and_slugify_city(city: str) -> str:
+    """Переводит название города в slug, который понимает Авито.
+
+    - кириллица транслитерируется в латиницу (Москва -> moskva)
+    - пробелы и подчеркивания становятся дефисами (Нижний Новгород -> nizhniy-novgorod)
+    - оставляются только a-z, 0-9 и дефис
+    - пустое значение -> 'all' (поиск по всей России)
+
+    :param city: исходное название города (может быть на русском).
+    :return: slug города в формате Авито.
+    """
+    raw = (city or "").strip().lower()
+    if not raw:
+        return "all"
+
+    # Быстрый путь: если город уже латиницей и совпадает с all
+    if raw == "all" or raw == "rossiya":
+        return "all"
+
+    # Транслитерация посимвольно, латиница и цифры остаются как есть
+    transliterated_chars: list[str] = []
+    for ch in raw:
+        if ch in _CYRILLIC_TO_LATIN:
+            transliterated_chars.append(_CYRILLIC_TO_LATIN[ch])
+        else:
+            transliterated_chars.append(ch)
+    transliterated = "".join(transliterated_chars)
+
+    # Нормализация: пробелы/_ -> -, убрать всё кроме a-z0-9-
+    slug = transliterated.replace(" ", "-").replace("_", "-")
+    # Заменяем любой символ, не входящий в a-z0-9-, на дефис
+    slug = re.sub(r"[^a-z0-9-]", "-", slug)
+    # Схлопываем множественные дефисы и обрезаем по краям
+    slug = re.sub(r"-+", "-", slug).strip("-")
+
+    return slug or "all"
+
+
 def build_search_url(product: str, city: str) -> str:
     """Формирует прямую ссылку на поиск вместо кликов по интерфейсу.
 
@@ -104,15 +182,25 @@ def build_search_url(product: str, city: str) -> str:
     при каждом релизе Авито, поэтому парсер переставал работать. Прямой URL
     гораздо стабильнее.
 
+    Вторая ошибка: город на кириллице кодировался как
+    ``/краснодар?q=...`` -> ``/%D0%BA%D1%80...`` и Авито отвечал 404
+    «Такой страницы не существует». Авито использует латиницу:
+    ``/krasnodar``, ``/moskva``, ``/sankt-peterburg``.
+
+    Корректный формат, подтверждённый документацией scraper'ов:
+    ``https://www.avito.ru/moskva?q=iPhone`` и
+    ``https://www.avito.ru/sankt-peterburg?q=...``
+
     :param product: поисковая фраза.
-    :param city: регион (город) поиска.
+    :param city: регион (город) поиска (может быть на русском).
     :return: URL страницы результатов поиска.
     """
     from urllib.parse import quote_plus
 
-    city_slug = (city or "").strip().lower().replace(" ", "_")
-    city_slug = city_slug or "all"
-    return f"https://www.avito.ru/{quote_plus(city_slug)}?q={quote_plus(product)}"
+    city_slug = _transliterate_and_slugify_city(city)
+    # product может содержать кириллицу — его кодируем через quote_plus
+    product_q = quote_plus((product or "").strip())
+    return f"https://www.avito.ru/{city_slug}?q={product_q}"
 
 
 async def selenium_task(data: Tuple[str, str, int]) -> None:

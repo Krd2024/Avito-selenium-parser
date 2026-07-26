@@ -42,15 +42,33 @@ class BuildSearchUrlTests(TestCase):
         url = build_search_url("ноутбук", "краснодар")
         self.assertTrue(url.startswith("https://www.avito.ru/"))
         self.assertIn("q=", url)
+        # Город должен быть транслитерирован в латиницу, а не закодирован кириллицей
+        self.assertIn("/krasnodar?", url)
+        path = url.split("?")[0]
+        self.assertNotIn("%D0", path)
+        self.assertNotIn("%d0", path.lower())
 
     def test_multiword_city_is_slugified(self):
         """Пробелы в названии города не должны попадать в URL."""
         url = build_search_url("стол", "нижний новгород")
         self.assertNotIn(" ", url)
-        self.assertIn("_", url)
+        # Авито использует дефис: sankt-peterburg, nizhniy-novgorod
+        self.assertIn("nizhniy-novgorod", url)
+        self.assertNotIn("_", url)
+
+    def test_moscow_slug(self):
+        url = build_search_url("телефон", "Москва")
+        self.assertIn("/moskva?", url)
 
     def test_empty_city_falls_back_to_all(self):
         self.assertIn("/all", build_search_url("стол", ""))
+
+    def test_real_avito_url_format(self):
+        """Итоговый URL должен соответствовать реальному формату Авито."""
+        url = build_search_url("телефон", "Москва")
+        # Пример реального: https://www.avito.ru/moskva?q=телефон
+        self.assertRegex(url, r"^https://www\.avito\.ru/[a-z0-9-]+\?q=.+")
+        self.assertIn("q=", url)
 
 
 class ParseFormDatetimeTests(TestCase):
