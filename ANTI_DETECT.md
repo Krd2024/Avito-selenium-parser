@@ -88,6 +88,36 @@ options.add_experimental_option('useAutomationExtension', False)
 wait_after_critical_action(browser, min_wait=5.0, max_wait=10.0)
 ```
 
+### 7. Прокси и ротация IP
+
+**Проблема:** Авито банит IP, с которого приходят автоматические запросы, —
+без ротации IP блокировка наступает почти сразу.
+
+**Решение:** пул прокси (`proxy.py`) с автоматической ротацией:
+
+- список берётся из `proxies.txt` (один прокси на строку) и/или из
+  переменной `PROXY_LIST`;
+- форматы: `host:port`, `host:port:login:password`,
+  `login:password@host:port`, `http://…`, `socks5://…`;
+- ротация `round_robin` (по кругу, по умолчанию) или `random`;
+- при капче/блокировке прокси банится немедленно, при обычных сбоях —
+  после `PROXY_MAX_FAILURES` (по умолчанию 3); бан длится
+  `PROXY_COOLDOWN_MINUTES` (по умолчанию 30 мин), затем прокси снова в игре;
+- задача парсинга автоматически повторяется со следующим прокси —
+  до `PARSE_PROXY_ATTEMPTS` попыток (по умолчанию 3);
+- прокси с паролем подключаются временным Chrome-расширением (MV3),
+  подставляющим заголовок `Proxy-Authorization`.
+
+**Код:**
+```python
+pool = get_proxy_pool()
+proxy = pool.next(exclude=tried)   # следующий живой прокси
+options, ext_dir = build_options(proxy=proxy)
+...
+pool.report_failure(proxy, reason="капча/блокировка Авито", ban_now=True)
+pool.report_success(proxy)
+```
+
 ## Архитектура
 
 ```
@@ -100,7 +130,12 @@ parsing_app/selenium/
 │   ├── random_mouse_movement()
 │   ├── simulate_human_behavior()
 │   └── wait_after_critical_action()
-└── avito_search.py         # Основной парсер (использует anti_detect)
+├── proxy.py                # Пул прокси и ротация
+│   ├── Proxy / parse_proxy_line()
+│   ├── ProxyPool           # ротация + бан сбойных
+│   ├── get_proxy_pool()    # синглтон из PROXY_FILE/PROXY_LIST
+│   └── apply_proxy_to_options()
+└── avito_search.py         # Основной парсер (использует anti_detect и proxy)
 ```
 
 ## Использование
@@ -153,7 +188,8 @@ wait_after_critical_action(browser, min_wait=8.0, max_wait=15.0)
 ## Предупреждения
 
 1. **Не злоупотребляйте** - делайте паузы между запросами (рекомендуется 30-60 секунд)
-2. **Используйте прокси** - для массового парсинга необходима ротация IP
+2. **Используйте прокси** - ротация IP уже встроена (см. раздел 7 и `proxies.txt.example`);
+   лучше всего подходят residential/мобильные прокси РФ
 3. **Соблюдайте robots.txt** - уважайте правила сайта
 4. **Ограничьте частоту** - не более 1 запроса в минуту для одного IP
 
