@@ -14,6 +14,18 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from parsing_app.selenium.db import create_result
+from parsing_app.selenium.anti_detect import (
+    get_random_user_agent,
+    human_like_delay,
+    simulate_human_behavior,
+    wait_after_critical_action,
+)
+from parsing_app.selenium.proxy import (
+    Proxy,
+    apply_proxy_to_options,
+    get_proxy_pool,
+    max_attempts_for_pool,
+)
 
 # Таймаут ожидания элементов на странице, сек.
 WAIT_TIMEOUT = 20
@@ -31,13 +43,28 @@ SEARCH_INPUT_SELECTORS = (
     "input#search",
     "input.styles-module-input-rA1dB",
 )
+# Селекторы для переключателя "Сначала из города" (localPriority)
+LOCAL_PRIORITY_SELECTORS = (
+    "span[data-marker='filters/localPriority/toggle']",
+    "div[data-marker='filters/localPriority/toggle']",
+    "input[data-marker='filters/localPriority/toggle']",
+    "label[data-marker='filters/localPriority/localPriority']",
+)
+# Селектор для "кружка" переключателя (видимый элемент)
+LOCAL_PRIORITY_CIRCLE_SELECTOR = "span.styles-module-toggle-tnaHU, span[class*='toggle']"
 
 
-def build_options(headless: bool = True) -> webdriver.ChromeOptions:
-    """Собирает параметры запуска Chrome.
+def build_options(
+    headless: bool = True,
+    proxy: Optional[Proxy] = None,
+) -> Tuple[webdriver.ChromeOptions, Optional[object]]:
+    """Собирает параметры запуска Chrome с анти-детект мерами.
 
     :param headless: запускать браузер в фоновом режиме.
-    :return: сконфигурированный объект :class:`ChromeOptions`.
+    :param proxy: прокси для этого запуска (``None`` — напрямую).
+    :return: кортеж ``(options, proxy_ext_dir)``, где ``proxy_ext_dir`` —
+        каталог временного расширения авторизации прокси (для последующей
+        очистки) или ``None``.
     """
     options = webdriver.ChromeOptions()
     # if headless:
@@ -52,16 +79,27 @@ def build_options(headless: bool = True) -> webdriver.ChromeOptions:
     options.add_argument("--allow-running-insecure-content")
     options.add_argument("--disable-background-networking")
     options.add_argument("--disable-sync")
-    options.add_argument("--disable-extensions")
+    # Прокси с паролем подключается мини-расширением (MV3) — при нём
+    # --disable-extensions выключать нельзя, иначе расширение не загрузится.
+    proxy_ext_dir = apply_proxy_to_options(options, proxy)
+    if proxy_ext_dir is None:
+        options.add_argument("--disable-extensions")
     options.add_argument("--disable-infobars")
     options.add_argument("--disable-notifications")
     options.add_argument("--disable-popup-blocking")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    )
-    return options
+    
+    # Ротация User-Agent для избежания детектирования
+    user_agent = get_random_user_agent()
+    options.add_argument(f"user-agent={user_agent}")
+    
+    # Дополнительные анти-детект меры
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+    
+    logger.debug(f"Используется User-Agent: {user_agent}")
+    return options, proxy_ext_dir
 
 
 def parse_ads_count(raw_text: str) -> Optional[int]:
@@ -174,57 +212,275 @@ def _transliterate_and_slugify_city(city: str) -> str:
     return slug or "all"
 
 
-def build_search_url(product: str, city: str) -> str:
+def _encode_avito_price_filter(price_from: Optional[int], price_to: Optional[int]) -> str:
+    """Кодирует ценовой диапазон в формат параметра ``f`` Avito.
+
+    Avito хранит ценовые фильтры как base64-url-safe от JSON
+    ``{"from":<N>,"to":<M>}`` внутри параметра ``f``.
+
+    :param price_from: цена от (руб.) или ``None``.
+    :param price_to: цена до (руб.) или ``None``.
+    :return: строка вида ``&f=<base64>`` или пустая строка, если цен нет.
+    """
+    import base64
+    import json
+
+    if price_from is None and price_to is None:
+        return ""
+
+    payload = {}
+    if price_from is not None:
+        payload["from"] = price_from
+    if price_to is not None:
+        payload["to"] = price_to
+
+    json_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(json_bytes).decode("ascii").rstrip("=")
+    return f"&f={encoded}"
+
+
+def build_search_url(
+    product: str,
+    city: str,
+    *,
+    url: str = "",
+    price_from: Optional[int] = None,
+    price_to: Optional[int] = None,
+) -> str:
     """Формирует прямую ссылку на поиск вместо кликов по интерфейсу.
+
+    Если задан ``url`` (полная ссылка от пользователя с фильтрами Avito),
+    он используется как основа — к нему лишь добавляются ценовые фильтры,
+    если они указаны.
+
+    Если ``url`` не задан, URL строится автоматически из ``product`` и ``city``.
 
     Прежняя реализация выбирала город и вводила запрос через UI, опираясь на
     сгенерированные CSS-классы (``buyer-location-nev1ty`` и т.п.). Они меняются
     при каждом релизе Авито, поэтому парсер переставал работать. Прямой URL
     гораздо стабильнее.
 
-    Вторая ошибка: город на кириллице кодировался как
-    ``/краснодар?q=...`` -> ``/%D0%BA%D1%80...`` и Авито отвечал 404
-    «Такой страницы не существует». Авито использует латиницу:
-    ``/krasnodar``, ``/moskva``, ``/sankt-peterburg``.
-
-    Корректный формат, подтверждённый документацией scraper'ов:
-    ``https://www.avito.ru/moskva?q=iPhone`` и
-    ``https://www.avito.ru/sankt-peterburg?q=...``
-
     :param product: поисковая фраза.
     :param city: регион (город) поиска (может быть на русском).
+    :param url: полный URL от пользователя с фильтрами (необязательно).
+    :param price_from: цена от (руб., необязательно).
+    :param price_to: цена до (руб., необязательно).
     :return: URL страницы результатов поиска.
     """
-    from urllib.parse import quote_plus
+    from urllib.parse import quote_plus, urlparse, urlunparse
+
+    price_filter = _encode_avito_price_filter(price_from, price_to)
+
+    if url:
+        # Пользовательский URL с фильтрами — используем как основу.
+        # Добавляем ценовые фильтры, если они заданы.
+        if price_filter:
+            parsed = urlparse(url)
+            sep = "&" if parsed.query else ""
+            new_query = parsed.query + sep + price_filter.lstrip("&")
+            url = urlunparse((
+                parsed.scheme, parsed.netloc, parsed.path,
+                parsed.params, new_query, parsed.fragment,
+            ))
+        return url
 
     city_slug = _transliterate_and_slugify_city(city)
     # product может содержать кириллицу — его кодируем через quote_plus
     product_q = quote_plus((product or "").strip())
-    return f"https://www.avito.ru/{city_slug}?q={product_q}"
+    base = f"https://www.avito.ru/{city_slug}?q={product_q}"
+    if price_filter:
+        base += price_filter
+    return base
 
 
-async def selenium_task(data: Tuple[str, str, int]) -> None:
+def _click_local_priority_toggle(browser) -> bool:
+    """Включает переключатель «Сначала из города» на странице Avito.
+
+    :param browser: экземпляр WebDriver.
+    :return: ``True`` если переключатель найден и включён, ``False`` иначе.
+    """
+    import time
+
+    # Эмулируем поведение человека перед важным действием
+    simulate_human_behavior(browser, pre_action=True)
+
+    # Сначала пробуем найти label (он кликабельный и включает input)
+    label_selectors = (
+        "label[data-marker='filters/localPriority/localPriority']",
+        "div[class*='filters-switcherWrapper']",
+    )
+    toggle = None
+    for selector in label_selectors:
+        try:
+            toggle = WebDriverWait(browser, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+            )
+            if toggle:
+                break
+        except TimeoutException:
+            continue
+
+    if toggle is None:
+        logger.warning("Переключатель 'Сначала из города' не найден на странице.")
+        return False
+
+    # Проверяем, включён ли уже переключатель
+    try:
+        checkbox = browser.find_element(
+            By.CSS_SELECTOR,
+            "input[data-marker='filters/localPriority/toggle']"
+        )
+        if checkbox.is_selected():
+            logger.info("Переключатель 'Сначала из города' уже включён.")
+            return True
+    except Exception:
+        pass  # Чекбокс не найден, продолжаем клик
+
+    # Кликаем по видимому элементу (label или span)
+    try:
+        # Прокручиваем к элементу с задержкой
+        browser.execute_script("arguments[0].scrollIntoView({block: 'center'});", toggle)
+        human_like_delay(1.0, 2.5)
+        
+        # Движение мыши к элементу
+        from selenium.webdriver.common.action_chains import ActionChains
+        try:
+            actions = ActionChains(browser)
+            actions.move_to_element(toggle)
+            actions.pause(0.5)  # Пауза перед кликом
+            actions.perform()
+        except Exception:
+            logger.debug("Не удалось выполнить движение мыши, продолжаем...")
+        
+        # Пробуем кликнуть по элементу
+        try:
+            toggle.click()
+            logger.info("Клик по переключателю выполнен успешно")
+        except Exception:
+            # Если клик не работает, используем JavaScript
+            logger.info("Обычный клик не сработал, используем JavaScript")
+            browser.execute_script("arguments[0].click();", toggle)
+        
+        # Ждём обновления списка товаров после включения фильтра
+        # Avito делает AJAX-запрос и обновляет DOM
+        logger.info("Ожидание обновления списка товаров после включения фильтра...")
+        
+        # Длительное ожидание с эмуляцией поведения
+        wait_after_critical_action(browser, min_wait=5.0, max_wait=10.0)
+        
+        # Ждём, пока счётчик объявлений обновится или станет видимым
+        try:
+            WebDriverWait(browser, 15).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "span[data-marker='page-title/count']"))
+            )
+            # Даём дополнительное время для полного обновления DOM
+            human_like_delay(2.0, 4.0)
+        except TimeoutException:
+            logger.warning("Не удалось дождаться обновления счётчика, продолжаем...")
+        
+        logger.info("Переключатель 'Сначала из города' включён, список обновлён.")
+        return True
+    except Exception as exc:
+        logger.error(f"Не удалось кликнуть по переключателю: {exc}")
+        return False
+
+
+async def selenium_task(data) -> None:
     """Асинхронная обертка для Selenium.
 
-    :param data: кортеж «(фраза, город, id связки)».
+    :param data: кортеж ``(фраза, город, id связки)`` или
+        ``(фраза, город, id связки, url, price_from, price_to)`` или
+        ``(фраза, город, id связки, url, price_from, price_to, local_priority)``.
     """
     await asyncio.to_thread(get_browser, data)
 
 
-def get_browser(data: Tuple[str, str, int]) -> Optional[int]:
-    """Парсит Авито и сохраняет количество найденных объявлений.
+# Маркеры страниц-заглушек антибот-защиты Авито. Если страница с капчей или
+# «доступ ограничен», счётчика объявлений на ней нет — нужно менять прокси,
+# а не ждать элементы до таймаута.
+_BLOCK_MARKERS = (
+    "captcha",
+    "подтвердите, что вы не робот",
+    "доступ ограничен",
+    "access denied",
+    "403 forbidden",
+    "smartcaptcha",
+    "avito.ru/blocked",
+    "попробуйте позже",
+)
 
-    :param data: кортеж «(фраза, город, id связки)».
-    :return: количество объявлений или ``None``, если получить его не удалось.
+
+class ProxyBlockedError(Exception):
+    """Авито показала капчу/заглушку — прокси спален, нужна ротация."""
+
+
+def _looks_blocked(browser) -> bool:
+    """Определяет, показал ли Авито страницу антибот-защиты.
+
+    :param browser: экземпляр WebDriver.
+    :return: ``True``, если страница похожа на капчу/блокировку.
     """
-    product, city, task_id = data
-    logger.info(f"Старт парсинга: фраза={product!r}, город={city!r}, id={task_id}")
-
-    browser = None
     try:
-        browser = webdriver.Chrome(options=build_options())
+        haystack = f"{browser.title or ''}\n{browser.page_source or ''}".lower()
+    except WebDriverException:
+        return True  # страница недоступна — считаем блокировкой
+    return any(marker in haystack for marker in _BLOCK_MARKERS)
+
+
+def _parse_once(
+    product: str,
+    city: str,
+    task_id: int,
+    url: str,
+    price_from: Optional[int],
+    price_to: Optional[int],
+    local_priority: bool,
+    proxy: Optional[Proxy] = None,
+) -> Optional[int]:
+    """Одна попытка парсинга (один браузер, один прокси).
+
+    :param product: поисковая фраза.
+    :param city: регион поиска.
+    :param task_id: id связки для записи результата.
+    :param url: пользовательский URL с фильтрами (может быть пустым).
+    :param price_from: цена от (руб.) или ``None``.
+    :param price_to: цена до (руб.) или ``None``.
+    :param local_priority: включать ли «Сначала из города».
+    :param proxy: прокси для этой попытки (``None`` — напрямую).
+    :return: количество объявлений или ``None``.
+    :raises ProxyBlockedError: если Авито показала капчу/блокировку —
+        сигнал вызывающему коду сменить прокси и повторить.
+    """
+    browser = None
+    proxy_ext_dir = None
+    try:
+        options, proxy_ext_dir = build_options(proxy=proxy)
+        browser = webdriver.Chrome(options=options)
         browser.set_page_load_timeout(60)
-        browser.get(build_search_url(product, city))
+
+        # Эмуляция поведения человека перед навигацией
+        human_like_delay(1.0, 3.0)
+
+        browser.get(build_search_url(
+            product, city,
+            url=url,
+            price_from=price_from,
+            price_to=price_to,
+        ))
+
+        # Ждём загрузки страницы с эмуляцией поведения
+        human_like_delay(2.0, 4.0)
+        simulate_human_behavior(browser, pre_action=False)
+
+        # Антибот-заглушка вместо результатов — прокси спален.
+        if _looks_blocked(browser):
+            raise ProxyBlockedError(
+                f"Авито показал капчу/блокировку для {product!r} ({city!r})"
+            )
+
+        # Включаем переключатель "Сначала из города" если нужно
+        if local_priority:
+            _click_local_priority_toggle(browser)
 
         element = _find_first(browser, COUNT_SELECTORS)
         if element is None:
@@ -238,6 +494,12 @@ def get_browser(data: Tuple[str, str, int]) -> Optional[int]:
                 element = _find_first(browser, COUNT_SELECTORS)
 
         if element is None:
+            # Счётчика нет: либо новая вёрстка, либо нас всё-таки забанили.
+            # Если страница похожа на блокировку — ротируем прокси.
+            if _looks_blocked(browser):
+                raise ProxyBlockedError(
+                    f"Счётчик не найден, страница похожа на блокировку ({product!r}, {city!r})"
+                )
             logger.error(
                 f"Не удалось найти счётчик объявлений для {product!r} ({city!r}). "
                 "Возможно, изменилась вёрстка Авито или сработала антибот-защита."
@@ -265,6 +527,8 @@ def get_browser(data: Tuple[str, str, int]) -> Optional[int]:
         create_result(data_parsing)
         return total
 
+    except ProxyBlockedError:
+        raise
     except WebDriverException as exc:
         logger.error(f"Ошибка браузера при парсинге {product!r} ({city!r}): {exc}")
         return None
@@ -279,3 +543,94 @@ def get_browser(data: Tuple[str, str, int]) -> Optional[int]:
                 browser.quit()
             except Exception:  # noqa: BLE001
                 pass
+        # Убираем временное расширение авторизации прокси.
+        if proxy_ext_dir is not None:
+            import shutil
+            shutil.rmtree(proxy_ext_dir, ignore_errors=True)
+
+
+def _unpack_task_data(data):
+    """Разбирает кортеж задачи в отдельные параметры.
+
+    :param data: кортеж из 3, 6 или 7 элементов (см. :func:`get_browser`).
+    :return: кортеж ``(product, city, task_id, url, price_from, price_to,
+        local_priority)``.
+    """
+    if len(data) >= 7:
+        product, city, task_id, url, price_from, price_to, local_priority = data[:7]
+    elif len(data) >= 6:
+        product, city, task_id, url, price_from, price_to = data[:6]
+        local_priority = False
+    else:
+        product, city, task_id = data[:3]
+        url = ""
+        price_from = None
+        price_to = None
+        local_priority = False
+    return product, city, task_id, url, price_from, price_to, local_priority
+
+
+def get_browser(data) -> Optional[int]:
+    """Парсит Авито и сохраняет количество найденных объявлений.
+
+    При блокировке или сбое автоматически перебирает прокси из пула
+    (ротация): каждый запуск браузера идёт через следующий прокси, а
+    спаленные прокси помечаются и временно исключаются. Число попыток —
+    ``PARSE_PROXY_ATTEMPTS`` (по умолчанию 3), без прокси — одна попытка.
+
+    :param data: кортеж ``(фраза, город, id связки)`` или
+        ``(фраза, город, id связки, url, price_from, price_to)`` или
+        ``(фраза, город, id связки, url, price_from, price_to, local_priority)``.
+    :return: количество объявлений или ``None``, если получить его не удалось.
+    """
+    product, city, task_id, url, price_from, price_to, local_priority = (
+        _unpack_task_data(data)
+    )
+
+    pool = get_proxy_pool()
+    attempts = max_attempts_for_pool(pool)
+
+    logger.info(
+        f"Старт парсинга: фраза={product!r}, город={city!r}, id={task_id}, "
+        f"url={url!r}, цена={price_from}–{price_to}, local_priority={local_priority}, "
+        f"прокси в пуле={0 if pool is None else len(pool)}, попыток={attempts}"
+    )
+
+    tried: set = set()
+    for attempt in range(1, attempts + 1):
+        proxy = pool.next(exclude=tried) if pool is not None else None
+        label = f"попытка {attempt}/{attempts}" + (
+            f", прокси {proxy}" if proxy is not None else ", напрямую"
+        )
+        logger.info(f"{label}: парсинг {product!r} ({city!r})")
+
+        try:
+            result = _parse_once(
+                product, city, task_id, url, price_from, price_to,
+                local_priority, proxy,
+            )
+        except ProxyBlockedError as exc:
+            logger.warning(f"Блокировка Авито ({label}): {exc}")
+            result = None
+            if proxy is not None:
+                # Капча = прокси спален — бан сразу, не ждём max_failures.
+                pool.report_failure(proxy, reason="капча/блокировка Авито", ban_now=True)
+
+        if result is not None:
+            if pool is not None and proxy is not None:
+                pool.report_success(proxy)
+            return result
+
+        if proxy is not None:
+            tried.add(proxy.key)
+            pool.report_failure(proxy, reason="не удалось получить счётчик")
+
+        # Небольшая пауза перед сменой прокси, чтобы не долбить по-роботски.
+        if attempt < attempts:
+            human_like_delay(2.0, 5.0)
+
+    logger.error(
+        f"Исчерпаны все попытки ({attempts}) парсинга {product!r} ({city!r}). "
+        "Проверьте список прокси: возможно, все забанены Авито."
+    )
+    return None

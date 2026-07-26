@@ -28,10 +28,11 @@ scheduler = BackgroundScheduler(executors=executors)
 _scheduler_lock = threading.Lock()
 
 
-def sync_selenium_task(data: Tuple[str, str, int]) -> None:
+def sync_selenium_task(data) -> None:
     """Запускает асинхронную функцию парсинга в синхронном APScheduler.
 
-    :param data: кортеж «(фраза, город, id связки)».
+    :param data: кортеж ``(фраза, город, id связки)`` или
+        ``(фраза, город, id связки, url, price_from, price_to)``.
     """
     loop = asyncio.new_event_loop()  # Создаем новый event loop для потока
     asyncio.set_event_loop(loop)
@@ -75,7 +76,7 @@ atexit.register(stop_scheduler)
 
 def scheduler_task(
     task: Callable[[Any], None],
-    data_for_search: Tuple[str, str, int],
+    data_for_search,
     task_id: str,
     minutes: Optional[int] = None,
     run_now: bool = True,
@@ -84,7 +85,8 @@ def scheduler_task(
     Добавляет задачу в глобальный планировщик.
 
     :param task: Функция, которая будет выполняться.
-    :param data_for_search: Кортеж «(фраза, город, id связки)».
+    :param data_for_search: Кортеж ``(фраза, город, id)`` или
+        ``(фраза, город, id, url, price_from, price_to)``.
     :param task_id: Уникальный идентификатор задачи (строка).
     :param minutes: Интервал выполнения задачи в минутах
         (по умолчанию ``settings.PARSE_INTERVAL_MINUTES``, то есть раз в час).
@@ -140,7 +142,15 @@ def restore_jobs() -> None:
     for request_user in requests:
         scheduler_task(
             sync_selenium_task,
-            (request_user.search_phrase, request_user.sity, request_user.id),
+            (
+                request_user.search_phrase,
+                request_user.sity,
+                request_user.id,
+                request_user.url or "",
+                request_user.price_from,
+                request_user.price_to,
+                request_user.local_priority,
+            ),
             str(request_user.id),
             run_now=False,
         )
