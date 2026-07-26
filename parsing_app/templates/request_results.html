@@ -78,6 +78,32 @@
       font-size: 14px;
     }
 
+    .search-url-box {
+      margin-top: 15px;
+      padding: 10px 14px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .search-url-box .url-label {
+      font-weight: bold;
+      color: #555;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .search-url-box a {
+      color: #007bff;
+      word-break: break-all;
+      text-decoration: none;
+    }
+
+    .search-url-box a:hover {
+      text-decoration: underline;
+    }
+
     .empty-message {
       color: #777;
       font-size: 18px;
@@ -125,6 +151,10 @@
           </span>
         </div>
       {% endif %}
+      <div class="search-url-box">
+        <span class="url-label">🔗 URL парсинга (нажмите для проверки):</span>
+        <a href="{{ search_url }}" target="_blank" rel="noopener">{{ search_url }}</a>
+      </div>
     </div>
 
     <div class="results-container">

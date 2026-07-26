@@ -12,8 +12,42 @@
       color: #333;
     }
     
+    .search-info {
+      width: 70%;
+      margin: 0 auto 20px;
+      background: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      text-align: left;
+      font-size: 13px;
+    }
+    
+    .search-info .info-label {
+      font-weight: bold;
+      color: #555;
+    }
+    
+    .search-info .url-link {
+      display: block;
+      margin-top: 5px;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      word-break: break-all;
+      color: #007bff;
+      text-decoration: none;
+      font-size: 12px;
+    }
+    
+    .search-info .url-link:hover {
+      background: #e9ecef;
+      text-decoration: underline;
+    }
+    
     .results-container {
-      width: 60%;
+      width: 70%;
       margin: auto;
       background: white;
       padding: 20px;
@@ -28,6 +62,9 @@
       border-radius: 5px;
       margin-bottom: 10px;
       border-left: 5px solid #007bff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     
     .result-item p {
@@ -35,37 +72,91 @@
     }
     
     .ads-count {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: bold;
       color: #d9534f;
+    }
+    
+    .checked-at {
+      color: #666;
+      font-size: 14px;
     }
     
     .empty-message {
       color: #777;
       font-size: 18px;
+      text-align: center;
+      padding: 30px;
+    }
+    
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #007bff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #eee;
+    }
+    
+    .results-header .request-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .results-header .results-count {
+      color: #666;
+      font-size: 14px;
     }
   </style>
 
   <body>
+    <a href="{% url 'search' %}" class="back-link">← Назад к поиску</a>
     <h1>Результаты поиска</h1>
+
+    {% if search_url %}
+      <div class="search-info">
+        <span class="info-label">🔗 URL парсинга:</span>
+        <a href="{{ search_url }}" target="_blank" rel="noopener" class="url-link">{{ search_url }}</a>
+        <div style="margin-top: 8px; color: #888; font-size: 12px;">
+          Нажмите на ссылку, чтобы открыть страницу Avito и проверить количество объявлений вручную.
+        </div>
+      </div>
+    {% endif %}
 
     <div class="results-container">
       {% if results %}
-        <div class="result-item">
-          <p>
-            <strong>Данные запроса:</strong>{{ results.first.request }}
-          </p>
+        <div class="results-header">
+          <span class="request-title">
+            {{ results.0.request.search_phrase }} — {{ results.0.request.sity }}
+          </span>
+          <span class="results-count">Замеров: {{ results|length }}</span>
         </div>
+        
         {% for result in results %}
           <div class="result-item">
-            <p class="ads-count">Количество объявлений: {{ result.ads_count }}</p>
-            <p>
-              <strong>Дата проверки:</strong> {{ result.checked_at|date:'d F Y H:i' }}
-            </p>
+            <div>
+              <p class="checked-at">📅 {{ result.checked_at|date:'d F Y H:i' }}</p>
+            </div>
+            <div>
+              <p class="ads-count">{{ result.ads_count }} объявлений</p>
+            </div>
           </div>
         {% endfor %}
       {% else %}
-        <p class="empty-message">Результатов пока нет</p>
+        <p class="empty-message">Результатов пока нет. Парсинг запущен — данные появятся в ближайшее время.</p>
       {% endif %}
     </div>
   </body>
