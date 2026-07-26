@@ -40,8 +40,8 @@ def build_options(headless: bool = True) -> webdriver.ChromeOptions:
     :return: сконфигурированный объект :class:`ChromeOptions`.
     """
     options = webdriver.ChromeOptions()
-    if headless:
-        options.add_argument("--headless=new")
+    # if headless:
+    #     options.add_argument("--headless=new")
     # Обязательно в контейнере: без этих флагов Chrome падает в Docker.
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
