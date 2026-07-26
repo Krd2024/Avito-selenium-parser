@@ -33,10 +33,13 @@ SEARCH_INPUT_SELECTORS = (
 )
 # Селекторы для переключателя "Сначала из города" (localPriority)
 LOCAL_PRIORITY_SELECTORS = (
+    "span[data-marker='filters/localPriority/toggle']",
+    "div[data-marker='filters/localPriority/toggle']",
     "input[data-marker='filters/localPriority/toggle']",
     "label[data-marker='filters/localPriority/localPriority']",
-    "input[name='localPriority']",
 )
+# Селектор для "кружка" переключателя (видимый элемент)
+LOCAL_PRIORITY_CIRCLE_SELECTOR = "span.styles-module-toggle-tnaHU, span[class*='toggle']"
 
 
 def build_options(headless: bool = True) -> webdriver.ChromeOptions:
@@ -269,22 +272,52 @@ def _click_local_priority_toggle(browser) -> bool:
     """
     import time
 
-    toggle = _find_first(browser, LOCAL_PRIORITY_SELECTORS, timeout=5)
+    # Сначала пробуем найти label (он кликабельный и включает input)
+    label_selectors = (
+        "label[data-marker='filters/localPriority/localPriority']",
+        "div[class*='filters-switcherWrapper']",
+    )
+    toggle = None
+    for selector in label_selectors:
+        try:
+            toggle = WebDriverWait(browser, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+            )
+            if toggle:
+                break
+        except TimeoutException:
+            continue
+
     if toggle is None:
         logger.warning("Переключатель 'Сначала из города' не найден на странице.")
         return False
 
-    # Если переключатель уже включён — ничего не делаем
-    if toggle.tag_name == "input" and toggle.is_selected():
-        logger.info("Переключатель 'Сначала из города' уже включён.")
-        return True
+    # Проверяем, включён ли уже переключатель
+    try:
+        checkbox = browser.find_element(
+            By.CSS_SELECTOR,
+            "input[data-marker='filters/localPriority/toggle']"
+        )
+        if checkbox.is_selected():
+            logger.info("Переключатель 'Сначала из города' уже включён.")
+            return True
+    except Exception:
+        pass  # Чекбокс не найден, продолжаем клик
 
-    # Кликаем по переключателю
+    # Кликаем по видимому элементу (label или span)
     try:
         # Прокручиваем к элементу
         browser.execute_script("arguments[0].scrollIntoView({block: 'center'});", toggle)
         time.sleep(0.3)
-        toggle.click()
+        
+        # Пробуем кликнуть по элементу
+        try:
+            toggle.click()
+        except Exception:
+            # Если клик не работает, используем JavaScript
+            logger.info("Обычный клик не сработал, используем JavaScript")
+            browser.execute_script("arguments[0].click();", toggle)
+        
         # Ждём обновления страницы (Avito делает это через JS)
         time.sleep(1.5)
         logger.info("Переключатель 'Сначала из города' включён.")
