@@ -15,8 +15,12 @@ class CustomUserAdmin(UserAdmin):
 class RequestUserAdmin(admin.ModelAdmin):
     """Список зарегистрированных поисковых запросов."""
 
-    list_display = ("id", "search_phrase", "sity")
+    list_display = ("id", "search_phrase", "sity", "price_from", "price_to", "has_url")
     search_fields = ("search_phrase", "sity")
+
+    @admin.display(boolean=True, description="URL")
+    def has_url(self, obj):
+        return bool(obj.url)
 
 
 @admin.register(ResultParsing)

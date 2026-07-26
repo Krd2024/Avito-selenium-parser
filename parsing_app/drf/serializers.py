@@ -13,10 +13,19 @@ class RequestUserSerializer(serializers.ModelSerializer):
     sity = serializers.CharField(
         max_length=255, allow_blank=False, trim_whitespace=True
     )
+    url = serializers.URLField(
+        max_length=2048, required=False, allow_blank=True, default=""
+    )
+    price_from = serializers.IntegerField(
+        required=False, allow_null=True, default=None
+    )
+    price_to = serializers.IntegerField(
+        required=False, allow_null=True, default=None
+    )
 
     class Meta:
         model = RequestUser
-        fields = ["id", "search_phrase", "sity"]
+        fields = ["id", "search_phrase", "sity", "url", "price_from", "price_to"]
         read_only_fields = ["id"]
 
     def create(self, validated_data: dict) -> RequestUser:
@@ -28,17 +37,31 @@ class RequestUserSerializer(serializers.ModelSerializer):
         :param validated_data: провалидированные данные запроса.
         :return: найденный или созданный объект :class:`RequestUser`.
         """
-        # Поля объявлены как required, поэтому здесь они всегда присутствуют:
-        # раньше отсутствующий "sity" приводил к AttributeError и ответу 500.
         search_phrase_value = validated_data["search_phrase"].strip().lower()
         sity_value = validated_data["sity"].strip().lower()
+        url_value = (validated_data.get("url") or "").strip()
+        price_from_value = validated_data.get("price_from")
+        price_to_value = validated_data.get("price_to")
 
         result, _created = RequestUser.objects.get_or_create(
             search_phrase=search_phrase_value,
             sity=sity_value,
         )
 
-        # Возвращаем найденный или созданный объект
+        # Обновляем фильтры (даже для существующей записи).
+        updated = False
+        if result.url != url_value:
+            result.url = url_value
+            updated = True
+        if result.price_from != price_from_value:
+            result.price_from = price_from_value
+            updated = True
+        if result.price_to != price_to_value:
+            result.price_to = price_to_value
+            updated = True
+        if updated:
+            result.save()
+
         return result
 
 

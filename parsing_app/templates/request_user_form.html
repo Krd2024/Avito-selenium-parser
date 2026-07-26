@@ -7,50 +7,104 @@
       text-align: center;
       padding: 50px;
     }
-    
+
     h1 {
       color: #333;
     }
-    
+
     form {
       background: white;
-      padding: 20px;
-      width: 50%;
+      padding: 30px;
+      width: 55%;
       margin: auto;
       border-radius: 8px;
       box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    
-    td {
-      padding: 10px;
       text-align: left;
     }
-    
-    input,
-    select,
-    textarea {
+
+    .form-section {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .form-section:last-child {
+      border-bottom: none;
+    }
+
+    .form-section h3 {
+      color: #007bff;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #555;
+    }
+
+    .form-field-input {
       width: 100%;
-      padding: 8px;
+      padding: 10px;
       border: 1px solid #ccc;
       border-radius: 5px;
+      font-size: 14px;
+      box-sizing: border-box;
     }
-    
+
+    .form-field-input:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 3px rgba(0, 123, 255, 0.3);
+    }
+
+    .form-help {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .price-row {
+      display: flex;
+      gap: 15px;
+    }
+
+    .price-row .form-group {
+      flex: 1;
+    }
+
+    .form-errors {
+      background: #f8d7da;
+      color: #842029;
+      padding: 12px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+
+    .form-errors ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
     button {
       background-color: #007bff;
       color: white;
-      padding: 10px 15px;
+      padding: 12px 20px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
       transition: 0.3s;
+      width: 100%;
+      font-size: 16px;
       margin-top: 10px;
     }
-    
+
     button:hover {
       background-color: #0056b3;
     }
@@ -60,7 +114,54 @@
     <h1>Форма поиска</h1>
     <form action="" method="post">
       {% csrf_token %}
-      <table>{{ form.as_table }}</table>
+
+      {% if form.non_field_errors %}
+        <div class="form-errors">
+          <ul>
+            {% for error in form.non_field_errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <div class="form-section">
+        <h3>📍 Основные параметры</h3>
+        <div class="form-group">
+          <label for="id_search_phrase">{{ form.search_phrase.label }}</label>
+          {{ form.search_phrase }}
+        </div>
+        <div class="form-group">
+          <label for="id_sity">{{ form.sity.label }}</label>
+          {{ form.sity }}
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>🔗 URL с фильтрами (необязательно)</h3>
+        <div class="form-group">
+          <label for="id_url">{{ form.url.label }}</label>
+          {{ form.url }}
+          <div class="form-help">
+            {{ form.url.help_text }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>💰 Ценовой диапазон (необязательно)</h3>
+        <div class="price-row">
+          <div class="form-group">
+            <label for="id_price_from">{{ form.price_from.label }}</label>
+            {{ form.price_from }}
+          </div>
+          <div class="form-group">
+            <label for="id_price_to">{{ form.price_to.label }}</label>
+            {{ form.price_to }}
+          </div>
+        </div>
+      </div>
+
       <button type="submit">Отправить</button>
     </form>
   </body>

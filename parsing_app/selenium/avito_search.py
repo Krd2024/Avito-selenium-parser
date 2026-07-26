@@ -174,57 +174,127 @@ def _transliterate_and_slugify_city(city: str) -> str:
     return slug or "all"
 
 
-def build_search_url(product: str, city: str) -> str:
+def _encode_avito_price_filter(price_from: Optional[int], price_to: Optional[int]) -> str:
+    """Кодирует ценовой диапазон в формат параметра ``f`` Avito.
+
+    Avito хранит ценовые фильтры как base64-url-safe от JSON
+    ``{"from":<N>,"to":<M>}`` внутри параметра ``f``.
+
+    :param price_from: цена от (руб.) или ``None``.
+    :param price_to: цена до (руб.) или ``None``.
+    :return: строка вида ``&f=<base64>`` или пустая строка, если цен нет.
+    """
+    import base64
+    import json
+
+    if price_from is None and price_to is None:
+        return ""
+
+    payload = {}
+    if price_from is not None:
+        payload["from"] = price_from
+    if price_to is not None:
+        payload["to"] = price_to
+
+    json_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(json_bytes).decode("ascii").rstrip("=")
+    return f"&f={encoded}"
+
+
+def build_search_url(
+    product: str,
+    city: str,
+    *,
+    url: str = "",
+    price_from: Optional[int] = None,
+    price_to: Optional[int] = None,
+) -> str:
     """Формирует прямую ссылку на поиск вместо кликов по интерфейсу.
+
+    Если задан ``url`` (полная ссылка от пользователя с фильтрами Avito),
+    он используется как основа — к нему лишь добавляются ценовые фильтры,
+    если они указаны.
+
+    Если ``url`` не задан, URL строится автоматически из ``product`` и ``city``.
 
     Прежняя реализация выбирала город и вводила запрос через UI, опираясь на
     сгенерированные CSS-классы (``buyer-location-nev1ty`` и т.п.). Они меняются
     при каждом релизе Авито, поэтому парсер переставал работать. Прямой URL
     гораздо стабильнее.
 
-    Вторая ошибка: город на кириллице кодировался как
-    ``/краснодар?q=...`` -> ``/%D0%BA%D1%80...`` и Авито отвечал 404
-    «Такой страницы не существует». Авито использует латиницу:
-    ``/krasnodar``, ``/moskva``, ``/sankt-peterburg``.
-
-    Корректный формат, подтверждённый документацией scraper'ов:
-    ``https://www.avito.ru/moskva?q=iPhone`` и
-    ``https://www.avito.ru/sankt-peterburg?q=...``
-
     :param product: поисковая фраза.
     :param city: регион (город) поиска (может быть на русском).
+    :param url: полный URL от пользователя с фильтрами (необязательно).
+    :param price_from: цена от (руб., необязательно).
+    :param price_to: цена до (руб., необязательно).
     :return: URL страницы результатов поиска.
     """
-    from urllib.parse import quote_plus
+    from urllib.parse import quote_plus, urlparse, urlunparse
+
+    price_filter = _encode_avito_price_filter(price_from, price_to)
+
+    if url:
+        # Пользовательский URL с фильтрами — используем как основу.
+        # Добавляем ценовые фильтры, если они заданы.
+        if price_filter:
+            parsed = urlparse(url)
+            sep = "&" if parsed.query else ""
+            new_query = parsed.query + sep + price_filter.lstrip("&")
+            url = urlunparse((
+                parsed.scheme, parsed.netloc, parsed.path,
+                parsed.params, new_query, parsed.fragment,
+            ))
+        return url
 
     city_slug = _transliterate_and_slugify_city(city)
     # product может содержать кириллицу — его кодируем через quote_plus
     product_q = quote_plus((product or "").strip())
-    return f"https://www.avito.ru/{city_slug}?q={product_q}"
+    base = f"https://www.avito.ru/{city_slug}?q={product_q}"
+    if price_filter:
+        base += price_filter
+    return base
 
 
-async def selenium_task(data: Tuple[str, str, int]) -> None:
+async def selenium_task(data) -> None:
     """Асинхронная обертка для Selenium.
 
-    :param data: кортеж «(фраза, город, id связки)».
+    :param data: кортеж ``(фраза, город, id связки)`` или
+        ``(фраза, город, id связки, url, price_from, price_to)``.
     """
     await asyncio.to_thread(get_browser, data)
 
 
-def get_browser(data: Tuple[str, str, int]) -> Optional[int]:
+def get_browser(data) -> Optional[int]:
     """Парсит Авито и сохраняет количество найденных объявлений.
 
-    :param data: кортеж «(фраза, город, id связки)».
+    :param data: кортеж ``(фраза, город, id связки)`` или
+        ``(фраза, город, id связки, url, price_from, price_to)``.
     :return: количество объявлений или ``None``, если получить его не удалось.
     """
-    product, city, task_id = data
-    logger.info(f"Старт парсинга: фраза={product!r}, город={city!r}, id={task_id}")
+    # Поддержка расширенного формата с фильтрами.
+    if len(data) >= 6:
+        product, city, task_id, url, price_from, price_to = data[:6]
+    else:
+        product, city, task_id = data[:3]
+        url = ""
+        price_from = None
+        price_to = None
+
+    logger.info(
+        f"Старт парсинга: фраза={product!r}, город={city!r}, id={task_id}, "
+        f"url={url!r}, цена={price_from}–{price_to}"
+    )
 
     browser = None
     try:
         browser = webdriver.Chrome(options=build_options())
         browser.set_page_load_timeout(60)
-        browser.get(build_search_url(product, city))
+        browser.get(build_search_url(
+            product, city,
+            url=url,
+            price_from=price_from,
+            price_to=price_to,
+        ))
 
         element = _find_first(browser, COUNT_SELECTORS)
         if element is None:

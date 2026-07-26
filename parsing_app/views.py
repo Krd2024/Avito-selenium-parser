@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.dateparse import parse_datetime
 from loguru import logger
 
@@ -49,7 +49,7 @@ def main(request):
 
 
 def request_user_view(request):
-    """Принимает запрос на поиск (что искать + город)
+    """Принимает запрос на поиск (что искать + город + фильтры)
     Проверяет, есть ли уже такой запрос
     """
     if request.method == "POST":
@@ -57,6 +57,9 @@ def request_user_view(request):
         if form.is_valid():
             phrase = form.cleaned_data["search_phrase"].strip().lower()
             sity = form.cleaned_data["sity"].strip().lower()
+            url = (form.cleaned_data.get("url") or "").strip()
+            price_from = form.cleaned_data.get("price_from")
+            price_to = form.cleaned_data.get("price_to")
 
             # Проверить, если такой запрос уже был, использовать его для поиска,
             # если не было — создать новый. get_or_create всегда возвращает
@@ -65,6 +68,21 @@ def request_user_view(request):
             data_search, _created = RequestUser.objects.get_or_create(
                 search_phrase=phrase, sity=sity
             )
+
+            # Обновляем фильтры (даже для уже существующего запроса),
+            # чтобы пользователь мог менять параметры.
+            updated = False
+            if data_search.url != url:
+                data_search.url = url
+                updated = True
+            if data_search.price_from != price_from:
+                data_search.price_from = price_from
+                updated = True
+            if data_search.price_to != price_to:
+                data_search.price_to = price_to
+                updated = True
+            if updated:
+                data_search.save()
 
             # Передаёт объект поиска (что искать, город, ID поиска) в сервис,
             # сервис запускает планировщик с поиском по параметрам.
@@ -81,10 +99,18 @@ def search_view(request):
     Пустые или некорректные значения формы больше не приводят к ошибке 500 —
     вместо этого пользователю показывается понятное сообщение.
     """
-    if request.method != "POST":
-        return render(request, "results_pars.html")
+    all_requests = RequestUser.objects.all().order_by("id")
 
-    request_id = (request.POST.get("request_id") or "").strip()
+    if request.method != "POST":
+        return render(
+            request, "results_pars.html", {"all_requests": all_requests}
+        )
+
+    # Поддержка двух полей: dropdown (request_id) и текстовый ввод (request_id_text).
+    # Текстовый ввод имеет приоритет, если заполнен.
+    request_id = (request.POST.get("request_id_text") or "").strip()
+    if not request_id:
+        request_id = (request.POST.get("request_id") or "").strip()
     start_data = parse_form_datetime(request.POST.get("start_data"))
     stop_data = parse_form_datetime(request.POST.get("stop_data"))
 
@@ -99,7 +125,12 @@ def search_view(request):
         errors.append("Дата окончания должна быть позже даты начала.")
 
     if errors:
-        return render(request, "results_pars.html", {"errors": errors}, status=400)
+        return render(
+            request,
+            "results_pars.html",
+            {"errors": errors, "all_requests": all_requests},
+            status=400,
+        )
 
     filters = {"request_id": int(request_id)}
     if start_data:
@@ -114,7 +145,11 @@ def search_view(request):
             f"Поиск: {result.request} | Количество: {result.ads_count} "
             f"| Время проверки: {result.checked_at}"
         )
-    return render(request, "results_parsing.html", {"results": results})
+    return render(
+        request,
+        "results_parsing.html",
+        {"results": results, "all_requests": all_requests},
+    )
 
 
 def list_view(request):
@@ -122,3 +157,18 @@ def list_view(request):
     all_requests = RequestUser.objects.all().order_by("id")
 
     return render(request, "all_requests.html", {"requests": all_requests})
+
+
+def request_results_view(request, request_id):
+    """Все результаты для конкретного поискового запроса.
+
+    Доступна по клику на название запроса в списке /list/.
+    """
+    req = get_object_or_404(RequestUser, pk=request_id)
+    results = ResultParsing.objects.filter(request=req).order_by("checked_at")
+
+    return render(
+        request,
+        "request_results.html",
+        {"req": req, "results": results},
+    )

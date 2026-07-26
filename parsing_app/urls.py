@@ -2,7 +2,7 @@ from rest_framework.routers import DefaultRouter
 from django.urls import path
 
 from parsing_app.drf.views_drf import RequestSerializerSet, ResultParsingSet
-from .views import list_view, main, request_user_view, search_view
+from .views import list_view, main, request_user_view, search_view, request_results_view
 
 
 router = DefaultRouter()
@@ -20,5 +20,5 @@ urlpatterns = [
     path("create/", request_user_view, name="request_user_vies"),
     path("search/", search_view, name="search"),
     path("list/", list_view, name="list"),
+    path("results/<int:request_id>/", request_results_view, name="request_results"),
 ]
-# urlpatterns = [path("api/v1/", include(router.urls))]
