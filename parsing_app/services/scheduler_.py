@@ -149,6 +149,7 @@ def restore_jobs() -> None:
                 request_user.url or "",
                 request_user.price_from,
                 request_user.price_to,
+                request_user.local_priority,
             ),
             str(request_user.id),
             run_now=False,

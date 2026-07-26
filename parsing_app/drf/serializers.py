@@ -22,10 +22,13 @@ class RequestUserSerializer(serializers.ModelSerializer):
     price_to = serializers.IntegerField(
         required=False, allow_null=True, default=None
     )
+    local_priority = serializers.BooleanField(
+        required=False, default=False
+    )
 
     class Meta:
         model = RequestUser
-        fields = ["id", "search_phrase", "sity", "url", "price_from", "price_to"]
+        fields = ["id", "search_phrase", "sity", "url", "price_from", "price_to", "local_priority"]
         read_only_fields = ["id"]
 
     def create(self, validated_data: dict) -> RequestUser:
@@ -42,6 +45,7 @@ class RequestUserSerializer(serializers.ModelSerializer):
         url_value = (validated_data.get("url") or "").strip()
         price_from_value = validated_data.get("price_from")
         price_to_value = validated_data.get("price_to")
+        local_priority_value = validated_data.get("local_priority", False)
 
         result, _created = RequestUser.objects.get_or_create(
             search_phrase=search_phrase_value,
@@ -58,6 +62,9 @@ class RequestUserSerializer(serializers.ModelSerializer):
             updated = True
         if result.price_to != price_to_value:
             result.price_to = price_to_value
+            updated = True
+        if result.local_priority != local_priority_value:
+            result.local_priority = local_priority_value
             updated = True
         if updated:
             result.save()

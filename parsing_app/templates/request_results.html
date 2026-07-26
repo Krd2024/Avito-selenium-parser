@@ -143,6 +143,12 @@
           </span>
         </div>
       {% endif %}
+      {% if req.local_priority %}
+        <div class="info-row">
+          <span class="info-label">Локация:</span>
+          <span class="info-value">Сначала из {{ req.sity }}</span>
+        </div>
+      {% endif %}
       {% if req.url %}
         <div class="info-row">
           <span class="info-label">URL:</span>

@@ -31,6 +31,12 @@ class RequestUser(models.Model):
         null=True, blank=True,
         verbose_name="Цена до",
     )
+    local_priority = models.BooleanField(
+        default=False,
+        verbose_name="Сначала из города",
+        help_text="Включить переключатель 'Сначала из города' на Avito. "
+                  "Показывает объявления только из указанного города.",
+    )
 
     class Meta:
         verbose_name = "Поисковый запрос"

@@ -23,9 +23,10 @@ def start_search(object_search: Optional[RequestUser] = None) -> None:
     url = object_search.url or ""  # полный URL с фильтрами
     price_from = object_search.price_from  # цена от
     price_to = object_search.price_to  # цена до
+    local_priority = object_search.local_priority  # сначала из города
 
     # Создать кортеж с фильтрами (расширенный формат)
-    data_for_search = (phrase, city, search_id, url, price_from, price_to)
+    data_for_search = (phrase, city, search_id, url, price_from, price_to, local_priority)
 
     # Запуск планировщика.
     # sync_selenium_task запускает асинхронную функцию парсинга.

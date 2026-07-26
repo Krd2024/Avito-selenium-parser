@@ -31,6 +31,12 @@ SEARCH_INPUT_SELECTORS = (
     "input#search",
     "input.styles-module-input-rA1dB",
 )
+# Селекторы для переключателя "Сначала из города" (localPriority)
+LOCAL_PRIORITY_SELECTORS = (
+    "input[data-marker='filters/localPriority/toggle']",
+    "label[data-marker='filters/localPriority/localPriority']",
+    "input[name='localPriority']",
+)
 
 
 def build_options(headless: bool = True) -> webdriver.ChromeOptions:
@@ -255,11 +261,45 @@ def build_search_url(
     return base
 
 
+def _click_local_priority_toggle(browser) -> bool:
+    """Включает переключатель «Сначала из города» на странице Avito.
+
+    :param browser: экземпляр WebDriver.
+    :return: ``True`` если переключатель найден и включён, ``False`` иначе.
+    """
+    import time
+
+    toggle = _find_first(browser, LOCAL_PRIORITY_SELECTORS, timeout=5)
+    if toggle is None:
+        logger.warning("Переключатель 'Сначала из города' не найден на странице.")
+        return False
+
+    # Если переключатель уже включён — ничего не делаем
+    if toggle.tag_name == "input" and toggle.is_selected():
+        logger.info("Переключатель 'Сначала из города' уже включён.")
+        return True
+
+    # Кликаем по переключателю
+    try:
+        # Прокручиваем к элементу
+        browser.execute_script("arguments[0].scrollIntoView({block: 'center'});", toggle)
+        time.sleep(0.3)
+        toggle.click()
+        # Ждём обновления страницы (Avito делает это через JS)
+        time.sleep(1.5)
+        logger.info("Переключатель 'Сначала из города' включён.")
+        return True
+    except Exception as exc:
+        logger.error(f"Не удалось кликнуть по переключателю: {exc}")
+        return False
+
+
 async def selenium_task(data) -> None:
     """Асинхронная обертка для Selenium.
 
     :param data: кортеж ``(фраза, город, id связки)`` или
-        ``(фраза, город, id связки, url, price_from, price_to)``.
+        ``(фраза, город, id связки, url, price_from, price_to)`` или
+        ``(фраза, город, id связки, url, price_from, price_to, local_priority)``.
     """
     await asyncio.to_thread(get_browser, data)
 
@@ -268,21 +308,26 @@ def get_browser(data) -> Optional[int]:
     """Парсит Авито и сохраняет количество найденных объявлений.
 
     :param data: кортеж ``(фраза, город, id связки)`` или
-        ``(фраза, город, id связки, url, price_from, price_to)``.
+        ``(фраза, город, id связки, url, price_from, price_to)`` или
+        ``(фраза, город, id связки, url, price_from, price_to, local_priority)``.
     :return: количество объявлений или ``None``, если получить его не удалось.
     """
     # Поддержка расширенного формата с фильтрами.
-    if len(data) >= 6:
+    if len(data) >= 7:
+        product, city, task_id, url, price_from, price_to, local_priority = data[:7]
+    elif len(data) >= 6:
         product, city, task_id, url, price_from, price_to = data[:6]
+        local_priority = False
     else:
         product, city, task_id = data[:3]
         url = ""
         price_from = None
         price_to = None
+        local_priority = False
 
     logger.info(
         f"Старт парсинга: фраза={product!r}, город={city!r}, id={task_id}, "
-        f"url={url!r}, цена={price_from}–{price_to}"
+        f"url={url!r}, цена={price_from}–{price_to}, local_priority={local_priority}"
     )
 
     browser = None
@@ -295,6 +340,10 @@ def get_browser(data) -> Optional[int]:
             price_from=price_from,
             price_to=price_to,
         ))
+
+        # Включаем переключатель "Сначала из города" если нужно
+        if local_priority:
+            _click_local_priority_toggle(browser)
 
         element = _find_first(browser, COUNT_SELECTORS)
         if element is None:

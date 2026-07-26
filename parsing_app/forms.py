@@ -32,10 +32,18 @@ class RequestUserForm(forms.ModelForm):
             attrs={"placeholder": "например, 30000", "class": "form-field-input"}
         ),
     )
+    local_priority = forms.BooleanField(
+        required=False,
+        label="Сначала из города",
+        help_text="Показывать объявления только из указанного города.",
+        widget=forms.CheckboxInput(
+            attrs={"class": "form-field-checkbox"}
+        ),
+    )
 
     class Meta:
         model = RequestUser
-        fields = ["search_phrase", "sity", "url", "price_from", "price_to"]
+        fields = ["search_phrase", "sity", "url", "price_from", "price_to", "local_priority"]
 
     def clean(self):
         cleaned = super().clean()

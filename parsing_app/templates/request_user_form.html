@@ -163,6 +163,21 @@
         </div>
       </div>
 
+      <div class="form-section">
+        <h3>📌 Дополнительные фильтры</h3>
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+          {{ form.local_priority }}
+          <div>
+            <label for="id_local_priority" style="display: inline; margin-bottom: 0; cursor: pointer;">
+              {{ form.local_priority.label }}
+            </label>
+            <div class="form-help" style="margin-top: 2px;">
+              {{ form.local_priority.help_text }}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <button type="submit">Отправить</button>
     </form>
   </body>

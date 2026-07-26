@@ -72,6 +72,7 @@ def request_user_view(request):
 
             # Обновляем фильтры (даже для уже существующего запроса),
             # чтобы пользователь мог менять параметры.
+            local_priority = form.cleaned_data.get("local_priority", False)
             updated = False
             if data_search.url != url:
                 data_search.url = url
@@ -81,6 +82,9 @@ def request_user_view(request):
                 updated = True
             if data_search.price_to != price_to:
                 data_search.price_to = price_to
+                updated = True
+            if data_search.local_priority != local_priority:
+                data_search.local_priority = local_priority
                 updated = True
             if updated:
                 data_search.save()
@@ -120,6 +124,7 @@ def search_view(request):
         url = (request.POST.get("url") or "").strip()
         price_from_str = (request.POST.get("price_from") or "").strip()
         price_to_str = (request.POST.get("price_to") or "").strip()
+        local_priority = request.POST.get("local_priority") == "on"
         
         errors = []
         if not search_phrase:
@@ -166,6 +171,9 @@ def search_view(request):
             updated = True
         if data_search.price_to != price_to:
             data_search.price_to = price_to
+            updated = True
+        if data_search.local_priority != local_priority:
+            data_search.local_priority = local_priority
             updated = True
         if updated:
             data_search.save()
