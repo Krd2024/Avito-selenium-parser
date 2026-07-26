@@ -17,6 +17,26 @@ class RequestUser(models.Model):
         max_length=255, verbose_name="Фраза для поиска"
     )
     sity = models.CharField(max_length=255, verbose_name="Город")
+    url = models.URLField(
+        max_length=2048, blank=True, default="",
+        verbose_name="URL с фильтрами",
+        help_text="Полная ссылка на поиск Avito с нужными фильтрами. "
+                  "Если указана — используется вместо автоматической сборки URL.",
+    )
+    price_from = models.PositiveIntegerField(
+        null=True, blank=True,
+        verbose_name="Цена от",
+    )
+    price_to = models.PositiveIntegerField(
+        null=True, blank=True,
+        verbose_name="Цена до",
+    )
+    local_priority = models.BooleanField(
+        default=False,
+        verbose_name="Сначала из города",
+        help_text="Включить переключатель 'Сначала из города' на Avito. "
+                  "Показывает объявления только из указанного города.",
+    )
 
     class Meta:
         verbose_name = "Поисковый запрос"

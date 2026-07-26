@@ -7,13 +7,13 @@
       text-align: center;
       padding: 50px;
     }
-    
+
     h1 {
       color: #333;
     }
-    
+
     table {
-      width: 80%;
+      width: 90%;
       margin: 20px auto;
       border-collapse: collapse;
       background: white;
@@ -21,25 +21,67 @@
       border-radius: 8px;
       overflow: hidden;
     }
-    
+
     th,
     td {
       padding: 12px;
       border: 1px solid #ddd;
       text-align: left;
     }
-    
+
     th {
       background-color: #007bff;
       color: white;
     }
-    
+
     tr:nth-child(even) {
       background-color: #f2f2f2;
     }
-    
+
     tr:hover {
-      background-color: #ddd;
+      background-color: #e8f0fe;
+    }
+
+    .link-cell a {
+      color: #007bff;
+      text-decoration: none;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    .link-cell a:hover {
+      color: #0056b3;
+      text-decoration: underline;
+    }
+
+    .url-badge {
+      display: inline-block;
+      background: #e9ecef;
+      color: #495057;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .price-badge {
+      display: inline-block;
+      background: #d4edda;
+      color: #155724;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-right: 4px;
+    }
+
+    .empty-message {
+      color: #777;
+      font-size: 18px;
+      padding: 30px;
     }
   </style>
 
@@ -51,14 +93,39 @@
           <th>ID</th>
           <th>Фраза</th>
           <th>Город</th>
+          <th>Фильтры</th>
+          <th>Результаты</th>
         </tr>
       </thead>
       <tbody>
         {% for request in requests %}
           <tr>
             <td>{{ request.id }}</td>
-            <td>{{ request.search_phrase }}</td>
+            <td class="link-cell">
+              <a href="{% url 'request_results' request.id %}">{{ request.search_phrase }}</a>
+            </td>
             <td>{{ request.sity }}</td>
+            <td>
+              {% if request.price_from or request.price_to %}
+                <span class="price-badge">
+                  {% if request.price_from %}от {{ request.price_from }}{% endif %}
+                  {% if request.price_to %}до {{ request.price_to }}{% endif %} ₽
+                </span>
+              {% endif %}
+              {% if request.url %}
+                <span class="url-badge" title="{{ request.url }}">🔗 URL</span>
+              {% endif %}
+              {% if not request.url and not request.price_from and not request.price_to %}
+                <span style="color: #aaa;">—</span>
+              {% endif %}
+            </td>
+            <td class="link-cell">
+              <a href="{% url 'request_results' request.id %}">Все результаты →</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="empty-message">Пока нет ни одного поискового запроса</td>
           </tr>
         {% endfor %}
       </tbody>

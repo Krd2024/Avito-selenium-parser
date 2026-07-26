@@ -39,6 +39,12 @@ services:
       DB_HOST: db
       DB_PORT: "3306"
       PARSE_INTERVAL_MINUTES: "60"
+      # Прокси и ротация (обход блокировок Авито). Список прокси — в файле
+      # proxies.txt в корне репозитория (монтируется через .:/app).
+      # Формат см. в proxies.txt.example. Пример:
+      # PROXY_LIST: "185.204.0.1:8000,185.204.0.2:8000:user:pass"
+      PROXY_ROTATION: "round_robin"
+      PARSE_PROXY_ATTEMPTS: "3"
 
     # required: false — без этого `docker compose up` падал, если .env
     # не создан (файл не хранится в репозитории).

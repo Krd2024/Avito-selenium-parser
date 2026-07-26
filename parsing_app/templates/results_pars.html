@@ -7,47 +7,86 @@
       text-align: center;
       padding: 50px;
     }
-    
+
     h1 {
       color: #333;
     }
-    
+
     .form-search-results {
       background: white;
-      padding: 20px;
-      width: 40%;
+      padding: 25px;
+      width: 60%;
       margin: auto;
       border-radius: 8px;
       box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
       text-align: left;
     }
-    
+
+    .form-section {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .form-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .form-section h3 {
+      color: #007bff;
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+
     label {
       font-weight: bold;
       display: block;
       margin-top: 10px;
+      color: #555;
+      font-size: 14px;
     }
-    
+
     .form-control {
       width: 100%;
       padding: 10px;
       margin-top: 5px;
       border: 1px solid #ccc;
       border-radius: 5px;
-      font-size: 16px;
+      font-size: 14px;
+      box-sizing: border-box;
     }
-    
-    hr {
-      border: 0;
-      height: 1px;
-      background: #ddd;
-      margin: 20px 0;
+
+    .form-control:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 3px rgba(0, 123, 255, 0.3);
     }
-    
+
+    .hint {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .price-row {
+      display: flex;
+      gap: 15px;
+    }
+
+    .price-row .form-group {
+      flex: 1;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
     .btn-primary {
       background-color: #007bff;
-      color: white;
-      padding: 10px 15px;
+      color: white !important;
+      padding: 12px 15px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -55,11 +94,31 @@
       display: block;
       width: 100%;
       font-size: 16px;
-      margin-top: 15px;
+      margin-top: 20px;
+      font-weight: bold;
     }
-    
+
     .btn-primary:hover {
       background-color: #0056b3;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white !important;
+      padding: 12px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s;
+      display: block;
+      width: 100%;
+      font-size: 16px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .btn-secondary:hover {
+      background-color: #545b62;
     }
   </style>
 
@@ -67,7 +126,7 @@
     <h1>Поиск результатов</h1>
 
     {% if errors %}
-      <div style="width: 40%; margin: 0 auto 15px; padding: 12px; background: #f8d7da; color: #842029; border-radius: 5px; text-align: left;">
+      <div style="width: 50%; margin: 0 auto 15px; padding: 12px; background: #f8d7da; color: #842029; border-radius: 5px; text-align: left;">
         <ul style="margin: 0; padding-left: 20px;">
           {% for error in errors %}
             <li>{{ error }}</li>
@@ -79,18 +138,74 @@
     <form action="{% url 'search' %}" method="post" class="form-search-results">
       {% csrf_token %}
 
-      <label for="request_id">Номер запроса:</label>
-      <input type="text" name="request_id" id="request_id" class="form-control" />
+      <div class="form-section">
+        <h3>📋 Выберите поисковый запрос</h3>
+        <label for="request_id">Запрос из списка:</label>
+        <select name="request_id" id="request_id" class="form-control">
+          <option value="">— Выберите запрос —</option>
+          {% for req in all_requests %}
+            <option value="{{ req.id }}">
+              #{{ req.id }}: {{ req.search_phrase }} ({{ req.sity }})
+            </option>
+          {% endfor %}
+        </select>
+        <div class="hint">Или введите ID вручную:</div>
+        <input type="text" name="request_id_text" id="request_id_text" class="form-control" placeholder="ID запроса" style="margin-top: 8px;" oninput="document.getElementById('request_id').value = this.value" />
+      </div>
 
-      <hr />
+      <div class="form-section">
+        <h3>📅 Период (необязательно)</h3>
+        <label for="start_data">Начало:</label>
+        <input type="datetime-local" name="start_data" id="start_data" class="form-control" />
 
-      <label for="start_data">Начало поиска:</label>
-      <input type="datetime-local" name="start_data" id="start_data" class="form-control" />
+        <label for="stop_data">Конец:</label>
+        <input type="datetime-local" name="stop_data" id="stop_data" class="form-control" />
+      </div>
 
-      <label for="stop_data">Конец поиска:</label>
-      <input type="datetime-local" name="stop_data" id="stop_data" class="form-control" />
+      <div class="form-section">
+        <h3>🔍 Быстрый поиск с фильтрами</h3>
+        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">
+          Введите параметры ниже, чтобы создать новый запрос или обновить существующий и сразу увидеть результаты.
+        </p>
+        
+        <div class="form-group">
+          <label for="search_phrase">Поисковая фраза:</label>
+          <input type="text" name="search_phrase" id="search_phrase" class="form-control" placeholder="например: телефон samsung" />
+        </div>
 
-      <button type="submit" class="btn-primary">Посмотреть</button>
+        <div class="form-group">
+          <label for="sity">Город:</label>
+          <input type="text" name="sity" id="sity" class="form-control" placeholder="например: москва" />
+        </div>
+
+        <div class="form-group">
+          <label for="url">URL с фильтрами Avito:</label>
+          <input type="url" name="url" id="url" class="form-control" placeholder="https://www.avito.ru/..." />
+          <div class="hint">Вставьте полную ссылку с Avito с нужными фильтрами</div>
+        </div>
+
+        <div class="price-row">
+          <div class="form-group">
+            <label for="price_from">Цена от (₽):</label>
+            <input type="number" name="price_from" id="price_from" class="form-control" placeholder="1000" min="0" />
+          </div>
+          <div class="form-group">
+            <label for="price_to">Цена до (₽):</label>
+            <input type="number" name="price_to" id="price_to" class="form-control" placeholder="30000" min="0" />
+          </div>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 15px;">
+          <input type="checkbox" name="local_priority" id="local_priority" style="width: auto; margin: 0;" />
+          <label for="local_priority" style="display: inline; margin: 0; cursor: pointer; font-weight: normal;">
+            Сначала из города
+          </label>
+          <div class="hint" style="margin: 0;">(показывать объявления только из указанного города)</div>
+        </div>
+      </div>
+
+      <button type="submit" name="action" value="search" class="btn-primary">📊 Показать результаты</button>
+      <button type="submit" name="action" value="quick_search" class="btn-secondary">🔍 Быстрый поиск и показать</button>
     </form>
   </body>
 {% endblock %}

@@ -1,0 +1,184 @@
+{% extends 'index.html' %}
+{% block content %}
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 50px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .request-info {
+      width: 70%;
+      margin: 0 auto 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      text-align: left;
+    }
+
+    .request-info h2 {
+      margin-top: 0;
+      color: #007bff;
+    }
+
+    .request-info .info-row {
+      display: flex;
+      margin-bottom: 8px;
+    }
+
+    .request-info .info-label {
+      font-weight: bold;
+      min-width: 140px;
+      color: #555;
+    }
+
+    .request-info .info-value {
+      color: #333;
+    }
+
+    .results-container {
+      width: 70%;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      text-align: left;
+    }
+
+    .result-item {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      border-left: 5px solid #007bff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .result-item p {
+      margin: 5px 0;
+    }
+
+    .ads-count {
+      font-size: 22px;
+      font-weight: bold;
+      color: #d9534f;
+    }
+
+    .checked-at {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .search-url-box {
+      margin-top: 15px;
+      padding: 10px 14px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .search-url-box .url-label {
+      font-weight: bold;
+      color: #555;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .search-url-box a {
+      color: #007bff;
+      word-break: break-all;
+      text-decoration: none;
+    }
+
+    .search-url-box a:hover {
+      text-decoration: underline;
+    }
+
+    .empty-message {
+      color: #777;
+      font-size: 18px;
+      text-align: center;
+      padding: 30px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #007bff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+
+  <body>
+    <a href="{% url 'list' %}" class="back-link">← Назад к списку запросов</a>
+    <h1>Результаты поиска</h1>
+
+    <div class="request-info">
+      <h2>{{ req.search_phrase }}</h2>
+      <div class="info-row">
+        <span class="info-label">Город:</span>
+        <span class="info-value">{{ req.sity }}</span>
+      </div>
+      {% if req.price_from or req.price_to %}
+        <div class="info-row">
+          <span class="info-label">Цена:</span>
+          <span class="info-value">
+            {% if req.price_from %}от {{ req.price_from }}{% endif %}
+            {% if req.price_to %}до {{ req.price_to }}{% endif %} ₽
+          </span>
+        </div>
+      {% endif %}
+      {% if req.local_priority %}
+        <div class="info-row">
+          <span class="info-label">Локация:</span>
+          <span class="info-value">Сначала из {{ req.sity }}</span>
+        </div>
+      {% endif %}
+      {% if req.url %}
+        <div class="info-row">
+          <span class="info-label">URL:</span>
+          <span class="info-value">
+            <a href="{{ req.url }}" target="_blank" rel="noopener" style="word-break: break-all;">{{ req.url }}</a>
+          </span>
+        </div>
+      {% endif %}
+      <div class="search-url-box">
+        <span class="url-label">🔗 URL парсинга (нажмите для проверки):</span>
+        <a href="{{ search_url }}" target="_blank" rel="noopener">{{ search_url }}</a>
+      </div>
+    </div>
+
+    <div class="results-container">
+      {% if results %}
+        <p style="color: #666; margin-bottom: 15px;">Всего замеров: {{ results|length }}</p>
+        {% for result in results %}
+          <div class="result-item">
+            <div>
+              <p class="checked-at">📅 {{ result.checked_at|date:'d F Y H:i' }}</p>
+            </div>
+            <div>
+              <p class="ads-count">{{ result.ads_count }} объявлений</p>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="empty-message">Результатов пока нет. Парсинг запущен — данные появятся в ближайшее время.</p>
+      {% endif %}
+    </div>
+  </body>
+{% endblock %}

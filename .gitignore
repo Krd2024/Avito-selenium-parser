@@ -43,6 +43,9 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+
+# Рабочий список прокси (может содержать логины/пароли) — не коммитим.
+proxies.txt
 nosetests.xml
 coverage.xml
 *.cover
