@@ -14,6 +14,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from parsing_app.selenium.db import create_result
+from parsing_app.selenium.anti_detect import (
+    get_random_user_agent,
+    human_like_delay,
+    simulate_human_behavior,
+    wait_after_critical_action,
+)
 
 # Таймаут ожидания элементов на странице, сек.
 WAIT_TIMEOUT = 20
@@ -43,7 +49,7 @@ LOCAL_PRIORITY_CIRCLE_SELECTOR = "span.styles-module-toggle-tnaHU, span[class*='
 
 
 def build_options(headless: bool = True) -> webdriver.ChromeOptions:
-    """Собирает параметры запуска Chrome.
+    """Собирает параметры запуска Chrome с анти-детект мерами.
 
     :param headless: запускать браузер в фоновом режиме.
     :return: сконфигурированный объект :class:`ChromeOptions`.
@@ -66,10 +72,17 @@ def build_options(headless: bool = True) -> webdriver.ChromeOptions:
     options.add_argument("--disable-notifications")
     options.add_argument("--disable-popup-blocking")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    )
+    
+    # Ротация User-Agent для избежания детектирования
+    user_agent = get_random_user_agent()
+    options.add_argument(f"user-agent={user_agent}")
+    
+    # Дополнительные анти-детект меры
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+    
+    logger.debug(f"Используется User-Agent: {user_agent}")
     return options
 
 
@@ -272,6 +285,9 @@ def _click_local_priority_toggle(browser) -> bool:
     """
     import time
 
+    # Эмулируем поведение человека перед важным действием
+    simulate_human_behavior(browser, pre_action=True)
+
     # Сначала пробуем найти label (он кликабельный и включает input)
     label_selectors = (
         "label[data-marker='filters/localPriority/localPriority']",
@@ -306,13 +322,24 @@ def _click_local_priority_toggle(browser) -> bool:
 
     # Кликаем по видимому элементу (label или span)
     try:
-        # Прокручиваем к элементу
+        # Прокручиваем к элементу с задержкой
         browser.execute_script("arguments[0].scrollIntoView({block: 'center'});", toggle)
-        time.sleep(0.3)
+        human_like_delay(1.0, 2.5)
+        
+        # Движение мыши к элементу
+        from selenium.webdriver.common.action_chains import ActionChains
+        try:
+            actions = ActionChains(browser)
+            actions.move_to_element(toggle)
+            actions.pause(0.5)  # Пауза перед кликом
+            actions.perform()
+        except Exception:
+            logger.debug("Не удалось выполнить движение мыши, продолжаем...")
         
         # Пробуем кликнуть по элементу
         try:
             toggle.click()
+            logger.info("Клик по переключателю выполнен успешно")
         except Exception:
             # Если клик не работает, используем JavaScript
             logger.info("Обычный клик не сработал, используем JavaScript")
@@ -322,16 +349,16 @@ def _click_local_priority_toggle(browser) -> bool:
         # Avito делает AJAX-запрос и обновляет DOM
         logger.info("Ожидание обновления списка товаров после включения фильтра...")
         
-        # Ждём появления индикатора загрузки (если есть) или просто ждём
-        time.sleep(2)
+        # Длительное ожидание с эмуляцией поведения
+        wait_after_critical_action(browser, min_wait=5.0, max_wait=10.0)
         
         # Ждём, пока счётчик объявлений обновится или станет видимым
         try:
-            WebDriverWait(browser, 10).until(
+            WebDriverWait(browser, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "span[data-marker='page-title/count']"))
             )
             # Даём дополнительное время для полного обновления DOM
-            time.sleep(1)
+            human_like_delay(2.0, 4.0)
         except TimeoutException:
             logger.warning("Не удалось дождаться обновления счётчика, продолжаем...")
         
@@ -382,12 +409,20 @@ def get_browser(data) -> Optional[int]:
     try:
         browser = webdriver.Chrome(options=build_options())
         browser.set_page_load_timeout(60)
+        
+        # Эмуляция поведения человека перед навигацией
+        human_like_delay(1.0, 3.0)
+        
         browser.get(build_search_url(
             product, city,
             url=url,
             price_from=price_from,
             price_to=price_to,
         ))
+
+        # Ждём загрузки страницы с эмуляцией поведения
+        human_like_delay(2.0, 4.0)
+        simulate_human_behavior(browser, pre_action=False)
 
         # Включаем переключатель "Сначала из города" если нужно
         if local_priority:
