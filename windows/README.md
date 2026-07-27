@@ -12,7 +12,7 @@
 | `build_exe.bat` | Сборка «в один клик» на Windows |
 | `requirements-build.txt` | Зависимости только для сборки (pyinstaller, waitress, whitenoise) |
 | `../run_app.py` | Точка входа: миграции → веб-сервер → браузер |
-| `../.github/workflows/build-windows-exe.yml` | Сборка .exe в GitHub Actions |
+| `github-workflow-build-windows-exe.yml` | Готовый workflow для сборки .exe в GitHub Actions |
 
 ## Важно: Chrome нужен на машине пользователя
 
@@ -36,6 +36,15 @@ windows\build_exe.bat
 Результат: `dist\AvitoParser.exe` (~40–60 МБ).
 
 ## Вариант B. Собрать в GitHub Actions (Windows-машина не нужна)
+
+Workflow лежит здесь как шаблон — скопируйте его в рабочий каталог Actions
+(файлы workflow нельзя добавлять автоматически без прав `workflows`):
+
+```sh
+mkdir -p .github/workflows
+cp windows/github-workflow-build-windows-exe.yml .github/workflows/build-windows-exe.yml
+git add .github/workflows/build-windows-exe.yml && git commit -m "CI: сборка Windows exe" && git push
+```
 
 1. Вкладка **Actions** → workflow **Build Windows exe** → **Run workflow**.
 2. По окончании скачать артефакт `AvitoParser-windows`.

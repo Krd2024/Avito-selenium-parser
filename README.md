@@ -65,8 +65,9 @@
 windows\build_exe.bat        :: сборка на Windows → dist\AvitoParser.exe
 ```
 
-Собрать можно и без Windows-машины — через GitHub Actions
-(**Actions → Build Windows exe → Run workflow**).
+Собрать можно и без Windows-машины — в GitHub Actions: готовый workflow
+лежит в `windows/github-workflow-build-windows-exe.yml`, скопируйте его
+в `.github/workflows/` (см. инструкцию ниже).
 
 Условие: на компьютере пользователя должен быть установлен **Google Chrome**
 (парсер управляет настоящим браузером). Драйвер скачивается автоматически.
