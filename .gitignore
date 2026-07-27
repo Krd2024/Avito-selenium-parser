@@ -31,6 +31,12 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+# ...но spec десктопной сборки — часть репозитория.
+!windows/avito_parser.spec
+
+# Окружение и вывод сборки .exe
+build_venv/
+staticfiles/
 
 # Installer logs
 pip-log.txt

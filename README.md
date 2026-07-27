@@ -55,6 +55,24 @@
 
 ## Установка и запуск
 
+### Вариант 0. Windows: один .exe без установки Python
+
+Проект собирается в единственный файл `AvitoParser.exe`, который запускается
+двойным кликом на любой Windows 10/11 x64: он сам применяет миграции,
+поднимает локальный сервер и открывает интерфейс в браузере.
+
+```bat
+windows\build_exe.bat        :: сборка на Windows → dist\AvitoParser.exe
+```
+
+Собрать можно и без Windows-машины — через GitHub Actions
+(**Actions → Build Windows exe → Run workflow**).
+
+Условие: на компьютере пользователя должен быть установлен **Google Chrome**
+(парсер управляет настоящим браузером). Драйвер скачивается автоматически.
+
+Подробности, настройки и разбор проблем — в [`windows/README.md`](windows/README.md).
+
 ### Вариант 1. Docker (рекомендуется)
 ```sh
 git clone https://github.com/Krd2024/Avito-selenium-parser.git
@@ -174,3 +192,14 @@ RUN_SCHEDULER=False python manage.py test parsing_app
 
 
 
+
+## Локальный десктопный запуск (без Docker и runserver)
+
+`run_app.py` — та же точка входа, что используется в .exe: миграции,
+production-сервер waitress и открытие браузера.
+
+```sh
+pip install -r requirements.txt -r windows/requirements-build.txt
+python run_app.py                 # http://127.0.0.1:8000
+python run_app.py --port 8100 --no-browser
+```

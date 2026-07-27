@@ -55,8 +55,12 @@ from urllib.parse import unquote, urlparse
 
 from loguru import logger
 
+from parsing_project.runtime_paths import data_dir
+
 # Корень проекта: ../.. от parsing_app/selenium/proxy.py.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# В собранном .exe исходники лежат во временном каталоге, поэтому список
+# прокси ищется рядом с исполняемым файлом (см. runtime_paths.data_dir).
+BASE_DIR = data_dir()
 
 
 def _env(name: str, default: str = "") -> str:

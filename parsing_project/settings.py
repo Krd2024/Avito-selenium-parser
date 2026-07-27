@@ -14,8 +14,16 @@ from pathlib import Path
 
 from decouple import Config, RepositoryEnv, config as env_config
 
+from parsing_project.runtime_paths import data_dir, resource_dir
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# В обычном запуске это корень репозитория, в собранном .exe — каталог с
+# распакованными ресурсами (шаблоны, статика).
+BASE_DIR = resource_dir()
+
+# Каталог для данных, доступных на запись: БД, логи, пользовательские .env и
+# proxies.txt. Для .exe — папка рядом с исполняемым файлом.
+DATA_DIR = data_dir()
 
 # ``python-decouple`` reads a value from the ``.env`` file *or* from the
 # process environment.  Generic names such as ``USER``, ``NAME`` or ``HOST``
@@ -24,7 +32,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # database configuration.  Reading the ``.env`` file explicitly (when it
 # exists) makes the file the single source of truth and keeps the shell from
 # poisoning the settings.
-ENV_FILE = BASE_DIR / ".env"
+ENV_FILE = DATA_DIR / ".env"
+if not ENV_FILE.is_file():
+    ENV_FILE = BASE_DIR / ".env"
 if ENV_FILE.is_file():
     config = Config(RepositoryEnv(str(ENV_FILE)))
 else:
@@ -101,6 +111,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise отдаёт статику (админка, Swagger UI) без runserver и nginx —
+    # это нужно десктопной сборке, где сервером работает waitress.
+    # Пакет опционален: если он не установлен, строка удаляется ниже.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -108,6 +122,11 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+try:  # pragma: no cover - зависит от окружения
+    import whitenoise  # noqa: F401
+except ImportError:  # pragma: no cover - обычная установка без whitenoise
+    MIDDLEWARE = [m for m in MIDDLEWARE if "whitenoise" not in m]
 
 ROOT_URLCONF = "parsing_project.urls"
 
@@ -171,7 +190,7 @@ if DB_ENGINE in ("sqlite", "sqlite3", "django.db.backends.sqlite3"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": get_setting("DB_NAME", "NAME", default=str(BASE_DIR / "db.sqlite3")),
+            "NAME": get_setting("DB_NAME", "NAME", default=str(DATA_DIR / "db.sqlite3")),
         }
     }
 else:
@@ -228,7 +247,18 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+# В .exe статика собирается на этапе сборки и кладётся рядом с кодом; при
+# обычном запуске collectstatic пишет в каталог данных.
+_BUNDLED_STATIC = BASE_DIR / "staticfiles"
+if _BUNDLED_STATIC.is_dir():
+    STATIC_ROOT = _BUNDLED_STATIC
+else:
+    STATIC_ROOT = DATA_DIR / "staticfiles"
+
+# Без собранной статики WhiteNoise берёт файлы через штатные finders —
+# так админка и Swagger UI работают даже без запуска collectstatic.
+WHITENOISE_USE_FINDERS = not _BUNDLED_STATIC.is_dir()
+WHITENOISE_AUTOREFRESH = WHITENOISE_USE_FINDERS
 
 # Как часто опрашивать Авито для каждой связки (по ТЗ — раз в час).
 # Поддерживается и короткое имя PERIOD из .env.
